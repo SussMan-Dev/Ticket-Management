@@ -7,15 +7,18 @@ import {
   type AuditLogRepository,
 } from "../../common/repositories/audit-log.repository.js";
 import { withTransaction } from "../../common/utils/transaction.util.js";
+import { pool } from "../../config/database.js";
 import type { RequestMetadata } from "../auth/auth.dto.js";
 import type { RepairTicketRow } from "../repair-tickets/repair-ticket.model.js";
 import {
   repairTicketRepository,
   type RepairTicketRepository,
 } from "../repair-tickets/repair-ticket.repository.js";
-import type { AssignTicketDto, ReassignTicketDto } from "./ticket-assignment.dto.js";
+import type { AssignTicketDto, ListAssignableTechniciansQuery, ReassignTicketDto } from "./ticket-assignment.dto.js";
 import {
+  toAssignableTechnician,
   toTicketAssignment,
+  type AssignableTechnician,
   type AssignableTechnicianRow,
   type TicketAssignment,
 } from "./ticket-assignment.model.js";
@@ -42,6 +45,15 @@ export class TicketAssignmentService {
     private readonly auditLogs: AuditLogRepository = auditLogRepository,
     private readonly runInTransaction: TransactionRunner = withTransaction,
   ) {}
+
+  public async listAssignableTechnicians(
+    actor: Express.AuthenticatedUser,
+    query: ListAssignableTechniciansQuery,
+  ): Promise<AssignableTechnician[]> {
+    this.assertManager(actor);
+    return (await this.repository.listAssignableTechnicians(pool, query.search))
+      .map(toAssignableTechnician);
+  }
 
   public async assign(
     actor: Express.AuthenticatedUser,

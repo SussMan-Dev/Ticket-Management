@@ -20,7 +20,7 @@ export const repairTicketRouter = Router();
 repairTicketRouter.use(authenticate);
 repairTicketRouter.get(
   "/",
-  authorize("CUSTOMER", "RECEPTIONIST", "TECHNICIAN", "MANAGER"),
+  authorize("CUSTOMER", "RECEPTIONIST", "TECHNICIAN", "MANAGER", "CASHIER"),
   validate(listRepairTicketsSchema),
   asyncHandler(repairTicketController.list),
 );

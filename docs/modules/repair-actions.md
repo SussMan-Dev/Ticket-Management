@@ -2,48 +2,59 @@
 
 ## Responsibility
 
-Record append-only repair work, consumed parts, device tests, and technical completion.
+Record repair work, fulfilled-part attribution, append-only device tests, technical completion, and the aggregated ticket timeline.
 
 ## Main entities
 
-Repair log, repair log part, and test result.
+Repair log, repair log part, test result, and timeline event.
 
 ## Main files
 
-Planned under `src/modules/repair-actions/` using the standard seven-file module structure.
+The standard route, controller, service, repository, model, schema, and DTO files under `src/modules/repair-actions/`.
 
 ## Public APIs
 
-Ticket repair-log list/create/update, ticket test-result list/create, and complete-testing. Planned for Phase 8.
+- `GET/POST /repair-tickets/:ticketId/repair-logs` for scoped reads and active-assigned-technician creation.
+- `PATCH /repair-logs/:id` for the active assigned author while the log is unfinished.
+- `GET/POST /repair-tickets/:ticketId/test-results` for scoped reads and active-assigned-technician append-only test evidence.
+- `POST /repair-tickets/:ticketId/complete-testing` for the active assigned technician.
+- `GET /repair-tickets/:ticketId/timeline` for the owning customer, active assigned technician, and manager.
 
 ## Allowed roles
 
-Only the active technician writes repair/test records. Managers view all and may return failed work through an approved workflow. Customers see sanitized progress.
+Only the active assigned technician writes repair logs, tests, and testing completion. Managers have full read-only visibility. Owning customers receive sanitized repair/test/timeline views without technician identity, repair results, used-part detail, internal notes, or actors where those details are internal.
 
 ## Business rules
 
-Do not overwrite completed repair history. Used parts must correspond to fulfilled inventory. At least the required tests must pass before technical completion.
+- Repair logs may be created and edited only while the ticket is `REPAIRING`. The creator must be the active assigned technician.
+- `startedAt` defaults server-side. When both timestamps exist, `finishedAt` cannot precede `startedAt`.
+- An unfinished log is editable by its author. A non-null `finishedAt` makes the log and its part attribution immutable.
+- Repair-log parts do not decrement stock again. They attribute already-issued stock, and cumulative usage for each ticket/part cannot exceed cumulative fulfilled request quantity.
+- At least one finished repair log is required before recording tests.
+- Test results are append-only. The first test recorded from `REPAIRING` atomically moves the ticket to `TESTING` with status history.
+- Test names are free-form because the schema has no configured test catalog. For completion, the newest result for each case-insensitive trimmed test name is authoritative.
+- Completing testing moves to `COMPLETED` only when every latest named result is `PASS`; otherwise it atomically returns to `REPAIRING`. Successful completion sets `completed_at`, notifies the customer, and is audited.
 
 ## State transitions
 
-`REPAIRING` → `TESTING`; passing completion moves to `COMPLETED`; failed testing returns to `REPAIRING`.
+`REPAIRING -> TESTING` when the first result of a testing round is recorded. `TESTING -> COMPLETED` when every latest named test passes. `TESTING -> REPAIRING` when completion finds a latest failed test.
 
 ## Database tables
 
-`repair_logs`, `repair_log_parts`, `test_results`, `repair_tickets`, `ticket_status_history`, and inventory tables.
+`repair_logs`, `repair_log_parts`, `test_results`, `repair_tickets`, `ticket_status_history`, `ticket_assignments`, `part_requests`, `part_request_items`, `notifications`, and `audit_logs`. Timeline reads also aggregate earlier workflow tables.
 
 ## Transactions
 
-Required when log completion consumes parts or when test completion changes ticket status/history.
+Required for every repair-log mutation, part-attribution validation/replacement, the first test plus ticket transition, and testing completion plus status history/notification/audit.
 
 ## Dependencies
 
-Assignments, repair tickets, and inventory.
+Active assignments, repair tickets, fulfilled inventory requests, users, notifications, audit logs, and all implemented workflow sources used by the timeline.
 
 ## Common errors
 
-Wrong assignee, ticket in wrong state, invalid time range, unfulfilled part usage, and failed/missing tests.
+Wrong assignee/author, ticket in the wrong state, invalid time range, immutable finished log, unfulfilled or over-attributed part usage, missing finished log, missing tests, and unauthorized customer/technician scope.
 
 ## Security considerations
 
-Validate attachment URLs; do not expose internal-only notes or device credentials; enforce assignment at service level.
+Enforce assignment and customer ownership in the service, lock the ticket before usage/state writes, validate all text/timestamps/quantities, keep tests append-only, sanitize customer views, and never place device credentials or secrets in customer-visible action descriptions.

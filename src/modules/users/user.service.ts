@@ -7,10 +7,15 @@ import {
   type AuditLogRepository,
 } from "../../common/repositories/audit-log.repository.js";
 import {
+  imageStorageService,
+  type ImageStorage,
+} from "../../common/services/image-storage.service.js";
+import {
   duplicateEntryField,
   isDuplicateEntryError,
 } from "../../common/utils/database-error.util.js";
 import { hashPassword } from "../../common/utils/password.util.js";
+import { logger } from "../../common/utils/logger.js";
 import { withTransaction } from "../../common/utils/transaction.util.js";
 import { pool } from "../../config/database.js";
 import type { RequestMetadata } from "../auth/auth.dto.js";
@@ -66,6 +71,7 @@ export class UserService {
     private readonly sessions: AuthRepository = authRepository,
     private readonly auditLogs: AuditLogRepository = auditLogRepository,
     private readonly runInTransaction: TransactionRunner = withTransaction,
+    private readonly images: ImageStorage = imageStorageService,
   ) {}
 
   public async list(query: ListUsersQuery): Promise<ListUsersResult> {
@@ -201,6 +207,71 @@ export class UserService {
       }
 
       throw error;
+    }
+  }
+
+  public async updateAvatar(
+    actor: Express.AuthenticatedUser,
+    userId: number,
+    bytes: Buffer,
+    mimeType: string,
+    metadata: RequestMetadata,
+  ): Promise<SafeUser> {
+    if (actor.role !== "ADMIN" && actor.id !== userId) {
+      throw new ForbiddenError("You may update only your own avatar", "FORBIDDEN");
+    }
+
+    const storedImage = await this.images.storeAvatar(userId, bytes, mimeType);
+    const requestMetadata = normalizeMetadata(metadata);
+    let previousAvatarUrl: string | null = null;
+
+    try {
+      const updated = await this.runInTransaction(async (connection) => {
+        const current = await this.repository.findById(connection, userId, true);
+
+        if (!current) {
+          throw new NotFoundError("User not found", "USER_NOT_FOUND");
+        }
+
+        previousAvatarUrl = current.avatar_url;
+        await this.repository.updateProfile(connection, userId, { avatarUrl: storedImage.url });
+        await this.auditLogs.create(connection, {
+          userId: actor.id,
+          action: "USER_AVATAR_UPDATED",
+          entityType: "USER",
+          entityId: userId,
+          oldData: { avatarUrl: current.avatar_url },
+          newData: { avatarUrl: storedImage.url },
+          ...requestMetadata,
+        });
+        const result = await this.repository.findById(connection, userId);
+
+        if (!result) {
+          throw new NotFoundError("User not found", "USER_NOT_FOUND");
+        }
+
+        return toSafeUser(result);
+      });
+
+      if (previousAvatarUrl && previousAvatarUrl !== storedImage.url) {
+        await this.removeStoredImage(previousAvatarUrl);
+      }
+
+      return updated;
+    } catch (error) {
+      await this.removeStoredImage(storedImage.url);
+      throw error;
+    }
+  }
+
+  private async removeStoredImage(url: string): Promise<void> {
+    try {
+      await this.images.deleteByUrl(url);
+    } catch (error) {
+      logger.warn("Failed to remove stored avatar image", {
+        url,
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
     }
   }
 

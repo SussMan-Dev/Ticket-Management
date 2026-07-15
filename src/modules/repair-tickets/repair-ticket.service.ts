@@ -90,6 +90,14 @@ export class RepairTicketService {
       scopedQuery = { ...query, customerId: actor.id };
     } else if (actor.role === "TECHNICIAN") {
       scopedQuery = { ...query, assignedTechnicianId: actor.id };
+    } else if (actor.role === "CASHIER") {
+      if (query.status !== undefined && query.status !== "COMPLETED") {
+        throw new ForbiddenError(
+          "Cashiers may list only completed tickets awaiting billing",
+          "BILLING_TICKET_SCOPE_REQUIRED",
+        );
+      }
+      scopedQuery = { ...query, status: "COMPLETED" };
     } else if (isTicketStaff(actor)) {
       scopedQuery = query;
     } else {

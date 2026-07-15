@@ -67,6 +67,7 @@ function assignment(overrides: Record<string, unknown> = {}) {
 
 function dependencies() {
   const repository = {
+    listAssignableTechnicians: vi.fn(),
     findTechnicianForUpdate: vi.fn(),
     findActiveByTicketForUpdate: vi.fn(),
     findById: vi.fn(),
@@ -95,6 +96,17 @@ function dependencies() {
 }
 
 describe("TicketAssignmentService", () => {
+  it("maps only repository-approved technician choices", async () => {
+    const deps = dependencies();
+    deps.repository.listAssignableTechnicians.mockResolvedValue([{
+      id: 6, full_name: "Technician One", email: "technician@example.com",
+      role: "TECHNICIAN", status: "ACTIVE", locked_until: null,
+    }]);
+    await expect(deps.service.listAssignableTechnicians(manager, {})).resolves.toEqual([
+      { id: 6, fullName: "Technician One", email: "technician@example.com" },
+    ]);
+  });
+
   it("assigns an active technician and transitions the ticket atomically", async () => {
     const deps = dependencies();
     deps.tickets.findById.mockResolvedValue(ticket());

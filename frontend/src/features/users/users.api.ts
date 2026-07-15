@@ -66,3 +66,20 @@ export function useUpdateUser(id: number) {
     },
   });
 }
+
+export function useUploadAvatar(id: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) =>
+      (await apiClient.upload<SafeUser>(`/users/${id}/avatar`, file)).data,
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.session }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.user(id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.customer(id) }),
+        queryClient.invalidateQueries({ queryKey: ["users"] }),
+        queryClient.invalidateQueries({ queryKey: ["customers"] }),
+      ]);
+    },
+  });
+}

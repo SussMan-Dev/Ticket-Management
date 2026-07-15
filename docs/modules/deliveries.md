@@ -10,19 +10,19 @@ Delivery and delivery proof attachment.
 
 ## Main files
 
-Planned under `src/modules/deliveries/` using the standard seven-file module structure.
+Implemented under `src/modules/deliveries/` using the standard seven-file module structure.
 
 ## Public APIs
 
-`POST /repair-tickets/:ticketId/deliver` and `GET /repair-tickets/:ticketId/delivery`. Planned for Phase 10.
+`POST /repair-tickets/:ticketId/deliver`, `GET /repair-tickets/:ticketId/delivery`, and `POST /repair-tickets/:ticketId/close`. Implemented in Phase 10.
 
 ## Allowed roles
 
-Receptionists perform delivery. Managers authorize documented unpaid exceptions. The owning customer views and confirms handover.
+Receptionists perform normal paid delivery. Managers perform only documented unpaid exceptions. Receptionists and managers may close a delivered ticket; the owning customer views handover.
 
 ## Business rules
 
-Ticket must be ready, normally fully paid, and not previously delivered. Record actor, recipient, and time. A ticket has one delivery record.
+Ticket must be ready, normally fully paid, and not previously delivered. A rejected quotation may be returned by Receptionist; an unpaid completed/ready ticket requires an explicit Manager reason. Record actor, recipient, and time. A ticket has one delivery record. Closure requires `DELIVERED` and that persisted record.
 
 ## State transitions
 

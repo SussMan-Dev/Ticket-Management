@@ -20,7 +20,16 @@ export const registerSchema = z.object({
   email: z.string().trim().email("Email không hợp lệ").max(191),
   phone: z.union([phoneSchema, z.literal("")]).optional(),
   password: passwordSchema,
+  confirmPassword: z.string().min(1, "Vui lòng xác nhận mật khẩu"),
   address: z.string().trim().max(500).optional(),
+}).superRefine((values, context) => {
+  if (values.password !== values.confirmPassword) {
+    context.addIssue({
+      code: "custom",
+      message: "Mật khẩu xác nhận không khớp",
+      path: ["confirmPassword"],
+    });
+  }
 });
 
 export type LoginValues = z.infer<typeof loginSchema>;

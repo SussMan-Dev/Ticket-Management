@@ -5,6 +5,7 @@ import type { RequestMetadata } from "../auth/auth.dto.js";
 import type {
   AssignTicketBody,
   ReassignTicketBody,
+  ListAssignableTechniciansQueryInput,
   TicketAssignmentParams,
 } from "./ticket-assignment.schema.js";
 import { ticketAssignmentService } from "./ticket-assignment.service.js";
@@ -25,6 +26,16 @@ function metadata(request: Request): RequestMetadata {
 }
 
 export const ticketAssignmentController = {
+  async listAssignableTechnicians(request: Request, response: Response): Promise<Response> {
+    return sendSuccess(response, {
+      message: "Assignable technicians retrieved successfully",
+      data: await ticketAssignmentService.listAssignableTechnicians(
+        authenticatedUser(request),
+        request.validated?.query as ListAssignableTechniciansQueryInput,
+      ),
+    });
+  },
+
   async assign(request: Request, response: Response): Promise<Response> {
     const { ticketId } = request.validated?.params as TicketAssignmentParams;
     const body = request.validated?.body as AssignTicketBody;

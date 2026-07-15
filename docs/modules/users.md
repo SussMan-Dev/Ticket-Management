@@ -14,7 +14,7 @@ User, role, account status.
 
 ## Public APIs
 
-`GET /users`, `GET /users/:id`, `POST /users`, `PATCH /users/:id`, `PATCH /users/:id/status`, and `PATCH /users/:id/role`, mounted under `/api/v1`.
+`GET /users`, `GET /users/:id`, `POST /users`, `PATCH /users/:id`, `POST /users/:id/avatar`, `PATCH /users/:id/status`, and `PATCH /users/:id/role`, mounted under `/api/v1`.
 
 ## Allowed roles
 
@@ -22,7 +22,7 @@ Admins list/create staff and change status/role. An authenticated user may updat
 
 ## Business rules
 
-Email and optional phone are unique. Staff creation excludes `CUSTOMER`. Deactivation does not delete history. Role/status changes revoke sessions and are audited. An administrator cannot disable/demote itself or remove the final active administrator.
+Email and optional phone are unique. Staff creation excludes `CUSTOMER`. A user may upload only their own avatar unless acting as Admin; uploads accept signature-validated JPEG/PNG/WebP content up to the configured limit, receive random filenames, and replace prior locally managed avatar files only after the database update commits. Deactivation does not delete history. Role/status changes revoke sessions and are audited. An administrator cannot disable/demote itself or remove the final active administrator.
 
 ## State transitions
 
@@ -38,7 +38,7 @@ Required for staff creation, profile audit changes, role/status changes, session
 
 ## Dependencies
 
-Authentication and customer profiles.
+Authentication, customer profiles, and the local image-storage service.
 
 ## Common errors
 
@@ -46,4 +46,4 @@ User not found, duplicate identity fields, invalid role, self-lock prevention, a
 
 ## Security considerations
 
-Responses use explicit safe columns, bounded pagination, parameterized filters, and server-side sort whitelists. Password and session hashes are never selected for list/detail APIs. Client role/status values are accepted only on dedicated admin endpoints and validated against seeded roles.
+Responses use explicit safe columns, bounded pagination, parameterized filters, and server-side sort whitelists. Password and session hashes are never selected for list/detail APIs. Client role/status values are accepted only on dedicated admin endpoints and validated against seeded roles. Avatar storage rejects SVG and MIME/content mismatches, never uses the client filename, and exposes only generated raster files from the configured upload directory.

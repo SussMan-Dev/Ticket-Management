@@ -1,12 +1,14 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, renderHook } from "@testing-library/react";
+import { act, render, renderHook, screen } from "@testing-library/react";
 import type { PropsWithChildren } from "react";
+import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { queryKeys } from "../../lib/api/query-keys";
 import type { Quotation } from "../../types/domain";
 import { quotationGateway } from "./quotation.gateway";
 import { isQuotationReadOnly, visibleQuotationActions } from "./quotation.rules";
 import { useTransitionQuotation } from "./quotations.api";
+import { CustomerQuotationResponse } from "./quotation-panel";
 
 function quotation(
   status: Quotation["status"],
@@ -50,6 +52,24 @@ describe("quotation role/status rules", () => {
     expect(visibleQuotationActions("CUSTOMER", quotation("SENT", "2020-01-01T00:00:00Z"))).toEqual([]);
     expect(isQuotationReadOnly(quotation("EXPIRED"))).toBe(true);
     expect(isQuotationReadOnly(quotation("SUPERSEDED"))).toBe(true);
+  });
+
+  it("hiển thị chấp nhận/từ chối ngay trên phiếu khách hàng khi báo giá đã gửi", () => {
+    const queryClient = new QueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <CustomerQuotationResponse ticketId={9} quotation={quotation("SENT")} />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByRole("button", { name: "Chấp nhận báo giá" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Từ chối" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Xem chi tiết" })).toHaveAttribute(
+      "href",
+      "/tickets/9/quotations/1",
+    );
   });
 
   it("invalidate quotation list/detail, ticket và status history sau mutation", async () => {

@@ -2,6 +2,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import express from "express";
 import helmet from "helmet";
+import { imageStorageService } from "./common/services/image-storage.service.js";
 import { env } from "./config/env.js";
 import { errorHandlerMiddleware } from "./middlewares/error-handler.middleware.js";
 import { notFoundMiddleware } from "./middlewares/not-found.middleware.js";
@@ -30,6 +31,20 @@ app.use(
 app.use(cookieParser());
 app.use(express.json({ limit: env.REQUEST_BODY_LIMIT }));
 app.use(express.urlencoded({ extended: false, limit: env.REQUEST_BODY_LIMIT }));
+
+app.use(
+  "/uploads",
+  express.static(imageStorageService.rootDirectory, {
+    dotfiles: "deny",
+    index: false,
+    maxAge: "1y",
+    immutable: true,
+    setHeaders(response) {
+      response.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+      response.setHeader("X-Content-Type-Options", "nosniff");
+    },
+  }),
+);
 
 app.use(env.API_PREFIX, apiRouter);
 

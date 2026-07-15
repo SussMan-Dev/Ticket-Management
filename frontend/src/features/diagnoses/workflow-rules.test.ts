@@ -16,6 +16,12 @@ describe("assignment và diagnosis workflow rules", () => {
     expect(canReviewDiagnosis("TECHNICIAN", "SUBMITTED")).toBe(false);
   });
 
+  it("kỹ thuật viên có thể gửi cả bản nháp và bản được yêu cầu sửa lại", () => {
+    expect(canSubmitDiagnosis("TECHNICIAN", "DRAFT")).toBe(true);
+    expect(canSubmitDiagnosis("TECHNICIAN", "REVISION_REQUIRED")).toBe(true);
+    expect(canSubmitDiagnosis("TECHNICIAN", "SUBMITTED")).toBe(false);
+  });
+
   it("manager assign ở RECEIVED và chỉ reassign ở ASSIGNED", () => {
     expect(ticketActionFlags("MANAGER", "RECEIVED")).toMatchObject({ canAssign: true, canReassign: false });
     expect(ticketActionFlags("MANAGER", "ASSIGNED")).toMatchObject({ canAssign: false, canReassign: true });

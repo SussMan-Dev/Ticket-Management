@@ -22,6 +22,11 @@ export const reassignTicketSchema = z.object({
     .strict(),
 });
 
+export const listAssignableTechniciansSchema = z.object({
+  query: z.object({ search: z.string().trim().min(1).max(100).optional() }).strict(),
+});
+
 export type TicketAssignmentParams = z.infer<typeof assignTicketSchema>["params"];
 export type AssignTicketBody = z.infer<typeof assignTicketSchema>["body"];
 export type ReassignTicketBody = z.infer<typeof reassignTicketSchema>["body"];
+export type ListAssignableTechniciansQueryInput = z.infer<typeof listAssignableTechniciansSchema>["query"];

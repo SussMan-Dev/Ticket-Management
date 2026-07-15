@@ -7,3 +7,7 @@ export interface ReassignTicketDto {
   technicianId: number;
   note: string;
 }
+
+export interface ListAssignableTechniciansQuery {
+  search?: string;
+}

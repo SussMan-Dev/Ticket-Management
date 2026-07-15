@@ -150,6 +150,12 @@ export interface TicketAssignment {
   note: string | null;
 }
 
+export interface AssignableTechnician {
+  id: number;
+  fullName: string;
+  email: string;
+}
+
 export type DiagnosisStatus = "DRAFT" | "SUBMITTED" | "REVISION_REQUIRED" | "APPROVED";
 
 export interface DiagnosisPart {
@@ -305,3 +311,163 @@ export interface PartRequest {
   createdAt: string;
   updatedAt: string;
 }
+
+export type TestResultValue = "PASS" | "FAIL";
+
+export interface RepairLogPart {
+  id: number;
+  part: { id: number; sku: string; name: string; unit: string };
+  quantity: number;
+  createdAt: string;
+}
+
+export interface RepairLog {
+  id: number;
+  ticketId: number;
+  technician?: { id: number; fullName: string };
+  actionDescription: string;
+  result?: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  parts?: RepairLogPart[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TestResult {
+  id: number;
+  ticketId: number;
+  testedBy?: { id: number; fullName: string };
+  testName: string;
+  result: TestResultValue;
+  note?: string | null;
+  testedAt: string;
+}
+
+export type TimelineEventType =
+  | "TICKET_STATUS"
+  | "ASSIGNMENT"
+  | "DIAGNOSIS"
+  | "QUOTATION"
+  | "PART_REQUEST"
+  | "INVENTORY_MOVEMENT"
+  | "REPAIR_LOG"
+  | "TEST_RESULT"
+  | "INVOICE"
+  | "PAYMENT"
+  | "DELIVERY"
+  | "REVIEW";
+
+export interface TimelineEvent {
+  key: string;
+  type: TimelineEventType;
+  title: string;
+  description: string | null;
+  actor: { id: number; fullName: string; role: UserRole } | null;
+  occurredAt: string;
+}
+
+export interface TestingCompletionResult {
+  outcome: "COMPLETED" | "REPAIR_REQUIRED";
+  ticketStatus: "COMPLETED" | "REPAIRING";
+}
+
+export const INVOICE_PAYMENT_STATUSES = [
+  "UNPAID",
+  "PARTIALLY_PAID",
+  "PAID",
+  "REFUNDED",
+  "PARTIALLY_REFUNDED",
+] as const;
+
+export type InvoicePaymentStatus = (typeof INVOICE_PAYMENT_STATUSES)[number];
+export type PaymentMethod = "CASH" | "BANK_TRANSFER" | "CARD" | "E_WALLET";
+export type PaymentStatus = "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
+
+export interface Invoice {
+  id: number;
+  invoiceCode: string;
+  ticket: { id: number; ticketCode: string; status: TicketStatus };
+  customer: { id: number; fullName: string; email: string };
+  subtotal: number;
+  discountAmount: number;
+  taxAmount: number;
+  totalAmount: number;
+  paidAmount: number;
+  balanceAmount: number;
+  paymentStatus: InvoicePaymentStatus;
+  createdBy: { id: number; fullName: string };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Payment {
+  id: number;
+  paymentCode: string;
+  invoiceId: number;
+  ticketId: number;
+  amount: number;
+  method: PaymentMethod;
+  status: PaymentStatus;
+  transactionReference: string | null;
+  receivedBy: { id: number; fullName: string };
+  paidAt: string;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface RefundApprover {
+  id: number;
+  fullName: string;
+}
+
+export interface Notification {
+  id: number;
+  type: string;
+  title: string;
+  content: string;
+  reference: { type: string; id: number } | null;
+  isRead: boolean;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface Delivery {
+  id: number;
+  ticket: { id: number; ticketCode: string };
+  deliveredBy: { id: number; fullName: string };
+  recipientName: string;
+  recipientPhone: string | null;
+  proofUrl: string | null;
+  note: string | null;
+  deliveredAt: string;
+}
+
+export interface Review {
+  id: number;
+  ticket: { id: number; ticketCode: string };
+  customer: { id: number; fullName: string };
+  rating: number;
+  technicianRating: number | null;
+  serviceRating: number | null;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DashboardReport {
+  openTickets: number;
+  readyForDelivery: number;
+  deliveredThisMonth: number;
+  outstandingAmount: number;
+  netRevenueThisMonth: number;
+  lowStockParts: number;
+  averageRating: number | null;
+}
+
+export interface TicketStatusReport { status: TicketStatus; total: number }
+export interface RevenueReport { period: string; grossAmount: number; refundedAmount: number; netAmount: number; completedPayments: number }
+export interface TechnicianPerformanceReport { technicianId: number; technicianName: string; completedTickets: number; repairLogs: number; testsRecorded: number; passedTests: number; passRate: number }
+export interface RepairTimeReport { period: string; completedTickets: number; averageRepairHours: number; averageDeliveryWaitHours: number | null }
+export interface PartsUsageReport { partId: number; sku: string; name: string; unit: string; quantityUsed: number; movementCount: number }
+export interface LowStockReport { partId: number; sku: string; name: string; unit: string; quantityOnHand: number; minimumStock: number; shortageQuantity: number }

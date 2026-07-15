@@ -10,15 +10,15 @@ Read-only aggregate DTOs; reports own no source-of-truth business entity.
 
 ## Main files
 
-Planned under `src/modules/reports/` using route/controller/service/repository/model/schema/DTO files.
+Implemented under `src/modules/reports/` using route/controller/service/repository/model/schema/DTO files.
 
 ## Public APIs
 
-`GET /reports/dashboard`, `/tickets-by-status`, `/revenue`, `/technician-performance`, `/repair-time`, `/parts-usage`, and `/low-stock`. Planned for Phase 10.
+`GET /reports/dashboard`, `/tickets-by-status`, `/revenue`, `/technician-performance`, `/repair-time`, `/parts-usage`, and `/low-stock`. Implemented in Phase 10.
 
 ## Allowed roles
 
-Managers view operational and revenue reports. Inventory staff view parts/low-stock. Cashiers may receive billing reports. Admin access is limited by explicit reporting policy.
+Managers view operational, revenue, technician, timing, and inventory reports. Inventory staff view only parts usage and low-stock. Other roles have no report route.
 
 ## Business rules
 

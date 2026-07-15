@@ -8,7 +8,7 @@ import { ProtectedRoute, RoleRoute } from "./route-guards";
 
 const user: SafeUser = { id: 1, fullName: "Test User", email: "test@example.com", phone: null, role: "CUSTOMER", status: "ACTIVE", avatarUrl: null, lastLoginAt: null, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" };
 function value(overrides: Partial<AuthContextValue>): AuthContextValue {
-  return { status: "anonymous", user: null, login: vi.fn(), logout: vi.fn(), ...overrides };
+  return { status: "anonymous", user: null, login: vi.fn(), logout: vi.fn(), updateCurrentUser: vi.fn(), ...overrides };
 }
 
 describe("route guards và role navigation", () => {

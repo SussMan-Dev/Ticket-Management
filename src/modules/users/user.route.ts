@@ -1,8 +1,9 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import { asyncHandler } from "../../common/utils/async-handler.js";
 import { authenticate } from "../../middlewares/authentication.middleware.js";
 import { authorize } from "../../middlewares/authorization.middleware.js";
 import { validate } from "../../middlewares/validation.middleware.js";
+import { env } from "../../config/env.js";
 import { userController } from "./user.controller.js";
 import {
   createStaffSchema,
@@ -38,6 +39,15 @@ userRouter.patch(
   "/:id",
   validate(updateUserSchema),
   asyncHandler(userController.update),
+);
+userRouter.post(
+  "/:id/avatar",
+  express.raw({
+    type: ["image/jpeg", "image/png", "image/webp"],
+    limit: env.IMAGE_UPLOAD_MAX_BYTES,
+  }),
+  validate(userIdParamsSchema),
+  asyncHandler(userController.updateAvatar),
 );
 userRouter.patch(
   "/:id/status",

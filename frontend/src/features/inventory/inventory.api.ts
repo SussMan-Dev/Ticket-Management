@@ -55,6 +55,9 @@ function usePartRequestMutation<TInput>(
         queryClient.invalidateQueries({
           queryKey: queryKeys.ticketHistory(ticketId ?? partRequest.ticket.id),
         }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.ticketTimeline(ticketId ?? partRequest.ticket.id),
+        }),
       ]);
     },
   });

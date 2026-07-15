@@ -2,48 +2,57 @@
 
 ## Responsibility
 
-Create one invoice per ticket, record partial/full payments, maintain payment status, and process manager-approved refunds.
+Create one server-calculated invoice per completed ticket, record partial/full payments, maintain the locked invoice balance, process manager-approved whole-payment refunds, and own billing readiness transitions.
 
 ## Main entities
 
-Invoice and payment.
+Invoice and immutable-amount payment.
 
 ## Main files
 
-Planned under `src/modules/payments/` using the standard seven-file module structure; invoice operations belong to the same billing boundary.
+Implemented under `src/modules/payments/` using route, controller, service, repository, model, schema, and DTO files. Invoice operations stay in the same billing boundary.
 
 ## Public APIs
 
-Invoice list/detail/create, invoice payment list/create, and payment refund. Planned for Phase 9.
+- `GET /invoices` and `GET /invoices/:id`
+- `POST /repair-tickets/:ticketId/invoices`
+- `GET/POST /invoices/:id/payments`
+- `GET /payments/refund-approvers`
+- `POST /payments/:id/refund`
+
+The cashier ticket list is restricted to `COMPLETED` tickets so the invoice creation UI can locate only billable work.
 
 ## Allowed roles
 
-Cashiers create invoices and record payments. Managers approve refund/exception policy. Owning customers view their invoice and payments.
+Cashiers create invoices, record payments, and execute approved refunds. Active managers are exposed as minimal refund-approver choices. Managers have read-only billing visibility; owning customers see only their own invoices and payments.
 
 ## Business rules
 
-One invoice per ticket. Server calculates totals. Valid payments cannot exceed total. Completed payments are immutable; refund is a separate audited operation.
+- Exactly one invoice may exist per ticket, and only while the locked ticket is `COMPLETED`.
+- The newest accepted quotation supplies the item subtotal, discount, tax, and total. Client totals are never accepted.
+- Payment amounts are positive, limited to two decimal places, and checked in integer cents against the locked outstanding balance.
+- Each recorded payment is immediately `COMPLETED`; amount, method, reference, receiver, and paid time are never edited.
+- Refund applies to one whole `COMPLETED` payment. The row changes only to `REFUNDED`; the original amount and metadata remain intact.
+- Refund requires a distinct active manager approval ID plus a reason. Approval identity, cashier, reason, before/after balance, and request metadata are audited.
+- Fully paid invoices move a `COMPLETED` ticket to `READY_FOR_DELIVERY`. A pre-delivery refund moves it back to `COMPLETED`.
+- Zero-value accepted quotations create a `PAID` invoice and immediately make the ticket ready for delivery.
 
 ## State transitions
 
-Invoice `UNPAID` → `PARTIALLY_PAID` → `PAID`; refund produces `PARTIALLY_REFUNDED` or `REFUNDED`. Payment moves from pending to completed/failed/refunded through controlled operations.
+Invoice collection uses `UNPAID → PARTIALLY_PAID → PAID`. Refunding one of multiple payments produces `PARTIALLY_REFUNDED`; refunding the last valid payment produces `REFUNDED`. A later valid payment recalculates the live collection status. Payment rows use `COMPLETED → REFUNDED` only through the refund command.
 
 ## Database tables
 
-`invoices`, `payments`, `repair_tickets`, `ticket_status_history`, and `audit_logs`.
+`invoices`, `payments`, `repair_tickets`, `ticket_status_history`, `notifications`, and `audit_logs`. The existing schema supports whole-payment refunds, so Phase 9 requires no migration.
 
 ## Transactions
 
-Required for invoice creation, payment plus invoice balance/status, refund, and readiness-for-delivery changes.
-
-## Dependencies
-
-Quotations, repair tickets, users, notifications, and delivery.
+Invoice creation locks the ticket and accepted quotation snapshot. Payment/refund locks ticket, invoice, then payment where applicable. Balance/status, payment row, ticket history, notification, and audit evidence commit or roll back together.
 
 ## Common errors
 
-Ticket not completed, duplicate invoice, amount exceeds balance, invalid method, refund exceeds paid value, and unauthorized cashier action.
+Ticket not completed, accepted quotation missing, duplicate invoice, amount exceeds balance, invalid method/precision, inactive manager approval, already-refunded payment, and owner/role access denial.
 
 ## Security considerations
 
-Never store card details. Treat external transaction references as untrusted input. Recalculate balances under row lock and audit all refunds.
+Never store card details. Treat external transaction references as untrusted text. Middleware role checks are followed by service ownership checks. Refund approval lookup returns only active manager ID/name and financial/audit history is never deleted.

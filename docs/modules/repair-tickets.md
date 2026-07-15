@@ -14,11 +14,11 @@ Implemented under `src/modules/repair-tickets/` using route, controller, service
 
 ## Public APIs
 
-Implemented in Phase 4: `GET/POST /repair-tickets`, `GET/PATCH /repair-tickets/:id`, `/receive`, `/change-status`, `/cancel`, `/status-history`, and `GET/POST /attachments`. `GET /customers/:id/tickets` is also implemented through this service. Phase 5 adds assignment/reassignment through the Ticket Assignments module; the aggregated timeline remains Phase 8.
+Implemented in Phase 4: `GET/POST /repair-tickets`, `GET/PATCH /repair-tickets/:id`, `/receive`, `/change-status`, `/cancel`, `/status-history`, and `GET/POST /attachments`. `GET /customers/:id/tickets` is also implemented through this service. Phase 5 adds assignment/reassignment; Phase 8 exposes the role-sanitized aggregated timeline at `/repair-tickets/:id/timeline` through the Repair Actions integration.
 
 ## Allowed roles
 
-Customers act on owned tickets; receptionists manage intake and receive; technicians may read only actively assigned tickets; managers see all and may hold/resume or cancel according to state. Admin is not an operational repair role. Billing/inventory context remains deferred to consuming phases.
+Customers act on owned tickets; receptionists manage intake and receive; technicians may read only actively assigned tickets; managers see all and may hold/resume or cancel according to state. Phase 9 lets cashiers list only `COMPLETED` tickets for invoice lookup; it does not grant ticket mutation. Admin is not an operational repair role. Inventory context remains owned by its consuming module.
 
 ## Business rules
 
@@ -26,7 +26,7 @@ Generate a unique `RT-YYYY-NNNNNN` code from the inserted ticket identity. Creat
 
 ## State transitions
 
-Defined in `src/common/constants/ticket-status.ts` and explained in `docs/ticket-workflow.md`. Repair Tickets directly enables `NEW → RECEIVED`, configured cancellation, and manager `RECEIVED ↔ ON_HOLD`. Phase 5 owning modules now perform `RECEIVED → ASSIGNED`, `ASSIGNED → DIAGNOSING`, `DIAGNOSING → WAITING_FOR_QUOTATION`, and the diagnosis revision return atomically; later transitions remain unavailable.
+Defined in `src/common/constants/ticket-status.ts` and explained in `docs/ticket-workflow.md`. Repair Tickets directly enables `NEW → RECEIVED`, configured cancellation, and manager `RECEIVED ↔ ON_HOLD`. Owning modules now perform Phase 5 assignment/diagnosis, Phase 6 quotation/response, Phase 7 part waiting/resumption, Phase 8 repair/testing, and Phase 9 payment/readiness transitions atomically; later transitions remain unavailable through the generic endpoint.
 
 ## Database tables
 

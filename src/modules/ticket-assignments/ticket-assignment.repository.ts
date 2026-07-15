@@ -30,6 +30,30 @@ const assignmentJoins = `
 `;
 
 export class TicketAssignmentRepository {
+  public async listAssignableTechnicians(
+    executor: DatabaseExecutor,
+    search?: string,
+  ): Promise<AssignableTechnicianRow[]> {
+    const searchClause = search ? "AND (u.full_name LIKE ? OR u.email LIKE ?)" : "";
+    const params = search ? [`%${search}%`, `%${search}%`] : [];
+    const [rows] = await executor.execute<AssignableTechnicianRow[]>(
+      `
+        SELECT u.id, u.full_name, u.email, r.code AS role, u.status, u.locked_until
+        FROM users AS u
+        INNER JOIN roles AS r ON r.id = u.role_id
+        WHERE r.code = 'TECHNICIAN'
+          AND u.status = 'ACTIVE'
+          AND u.deleted_at IS NULL
+          AND (u.locked_until IS NULL OR u.locked_until <= CURRENT_TIMESTAMP)
+          ${searchClause}
+        ORDER BY u.full_name ASC, u.id ASC
+        LIMIT 100
+      `,
+      params,
+    );
+    return rows;
+  }
+
   public async findTechnicianForUpdate(
     connection: PoolConnection,
     technicianId: number,

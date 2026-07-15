@@ -1,7 +1,17 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "../../lib/api/client";
 import { queryKeys } from "../../lib/api/query-keys";
-import type { TicketAssignment } from "../../types/domain";
+import type { AssignableTechnician, TicketAssignment } from "../../types/domain";
+
+export function useAssignableTechnicians() {
+  return useQuery({
+    queryKey: queryKeys.assignableTechnicians,
+    queryFn: async () => (await apiClient.get<AssignableTechnician[]>(
+      "/repair-tickets/assignable-technicians",
+    )).data,
+    staleTime: 60_000,
+  });
+}
 
 export function useAssignTicket(ticketId: number) {
   const queryClient = useQueryClient();
@@ -12,6 +22,7 @@ export function useAssignTicket(ticketId: number) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.ticket(ticketId) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.ticketHistory(ticketId) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.ticketTimeline(ticketId) }),
         queryClient.invalidateQueries({ queryKey: ["repair-tickets"] }),
       ]);
     },
@@ -27,6 +38,7 @@ export function useReassignTicket(ticketId: number) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.ticket(ticketId) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.ticketHistory(ticketId) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.ticketTimeline(ticketId) }),
         queryClient.invalidateQueries({ queryKey: ["repair-tickets"] }),
       ]);
     },

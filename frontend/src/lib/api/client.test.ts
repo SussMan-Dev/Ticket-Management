@@ -71,4 +71,21 @@ describe("API auth transport", () => {
     expect(error).toBeInstanceOf(ApiError);
     expect(error).toMatchObject({ status: 409, code: "CONFLICT", details: { currentStatus: "SUBMITTED" } });
   });
+
+  it("uploads an image as raw bytes with its real content type", async () => {
+    let receivedType = "";
+    let receivedBody = "";
+    server.use(http.post("http://localhost:3000/api/v1/users/7/avatar", async ({ request }) => {
+      receivedType = request.headers.get("content-type") ?? "";
+      receivedBody = await request.text();
+      return HttpResponse.json(success({ ...user, avatarUrl: "http://localhost:3000/uploads/avatars/test.png" }));
+    }));
+    const file = new Blob(["test"], { type: "image/png" });
+
+    const response = await apiClient.upload<SafeUser>("/users/7/avatar", file);
+
+    expect(response.data.avatarUrl).toContain("/uploads/avatars/");
+    expect(receivedType).toBe("image/png");
+    expect(receivedBody).toBe("test");
+  });
 });

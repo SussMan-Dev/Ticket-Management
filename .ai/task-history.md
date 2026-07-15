@@ -1,5 +1,190 @@
 # Task History
 
+## 2026-07-15 — Local profile avatar upload
+
+Completed:
+
+- Added an authenticated self/Admin avatar upload endpoint, configurable local image storage, public static delivery, random filenames, audit evidence, and safe replacement cleanup.
+- Enforced a 5 MB default limit plus MIME/signature validation for JPEG, PNG, and WebP while rejecting SVG and mismatched content.
+- Added a responsive local-file picker with preview and immediate avatar refresh across profile, header, and sidebar.
+- Added backend storage/service/API tests, frontend picker/raw-transport tests, environment examples, and synchronized API/security/module documentation.
+
+Verification:
+
+- Backend typecheck/build passed; all 198 backend tests passed.
+- Frontend typecheck/lint/build passed; all 34 frontend tests passed.
+- No new package or database migration was required.
+
+## 2026-07-15 — Shared UI alignment and footer
+
+Completed:
+
+- Added one reusable branded footer to authenticated and public authentication layouts.
+- Put the topbar, main content, and footer on the same responsive width/gutter grid and kept the footer at the bottom of short pages through the application flex layout.
+- Standardized shared page headers, action groups, cards, form widths, toolbars, tables, detail grids, and responsive stacking without changing feature behavior.
+- Documented the shared frontend shell and preserved all existing workflow and authorization contracts.
+
+Verification:
+
+- Frontend typecheck/lint/build passed; all 31 frontend tests passed.
+- No backend, API, database, business-rule, or dependency change was introduced.
+
+## 2026-07-15 — Customer quotation acceptance visibility
+
+Completed:
+
+- Diagnosed that the active development tickets have approved diagnoses but no quotation rows, so no customer response is currently valid.
+- Added an inline sent-quotation response card to customer ticket detail with total, expiry, details, accept/reject actions, confirmation, and error/pending feedback.
+- Added explicit customer and Manager next-step guidance while preserving backend ownership/status/expiry enforcement.
+- Added regression coverage for the inline customer response controls.
+
+Verification:
+
+- Frontend typecheck/lint/build passed; all 31 frontend tests passed.
+- Database inspection was read-only; no quotation was created on behalf of a user.
+
+## 2026-07-15 — Phase 10 completion and end-to-end integration
+
+Completed:
+
+- Implemented recipient-scoped notification list/count/read APIs and a global frontend notification center with reference navigation.
+- Implemented transactional device handover, proof metadata, paid-invoice enforcement, rejected-device return, audited Manager payment exceptions, and guarded final ticket closure.
+- Implemented owner-only post-delivery reviews with one-per-ticket uniqueness, ratings 1–5, authorized staff reads, audit evidence, and a seven-day edit window.
+- Implemented Manager operations/revenue/performance/timing reports and Manager/Inventory parts-usage/low-stock reports with bounded date ranges.
+- Extended the aggregated timeline through invoice, payment, delivery, and review events and enabled Receptionist access.
+- Closed the earlier assignment UI gap with a Manager-only active/unlocked technician lookup and selectable technicians instead of raw IDs.
+- Integrated delivery/closure, review, notifications, and responsive report views into the React application and synchronized all affected documentation/maps.
+
+Verification:
+
+- Backend typecheck/build passed; all 193 tests passed across 38 files.
+- Frontend typecheck/lint/build passed; all 30 tests passed.
+- All seven report queries and the expanded timeline executed successfully against development MySQL.
+- No migration or dependency was required; existing schema tables support the completed workflow.
+
+Remaining:
+
+- Planned Phases 1–10 are complete. Next work is UAT/deployment or a separately scoped product extension.
+
+## 2026-07-15 — Diagnosis submission and approval UI fix
+
+Completed:
+
+- Fixed the editable-diagnosis early return that hid “Gửi duyệt chẩn đoán” from technicians.
+- Added a separate save-then-submit action with confirmation, loading/error feedback, and targeted styling.
+- Confirmed that a submitted diagnosis exposes “Duyệt chẩn đoán” and revision controls to Manager through the existing role/status rules.
+- Added component regression coverage for both the technician `DRAFT` and Manager `SUBMITTED` views.
+
+Verification:
+
+- Frontend typecheck/lint/build passed; all 30 frontend tests passed.
+- Backend, database, and API contracts were unchanged.
+
+Remaining:
+
+- User can now complete diagnosis approval and proceed to quotation; Phase 10 remains next.
+
+## 2026-07-15 — Phase 9 Invoices and Payments
+
+Completed:
+
+- Implemented the seven-file Payments backend module with scoped invoice list/detail/create, payment list/create, active refund-approver lookup, and whole-payment refund.
+- Calculated invoice subtotal/discount/tax/total only from the accepted quotation snapshot and enforced one invoice per locked completed ticket.
+- Used cent-based locked balance calculations for partial/full payments, prevented overpayment, and kept completed payment financial fields immutable.
+- Required a distinct active manager plus reason for refund, bounded refunds to one valid completed payment, and audited cashier/manager/before-after evidence.
+- Committed payment/refund, invoice balance/status, ticket readiness/history, customer notification, and audit evidence atomically.
+- Added `COMPLETED → READY_FOR_DELIVERY` on full payment and guarded `READY_FOR_DELIVERY → COMPLETED` after a pre-delivery refund.
+- Added responsive Customer/Cashier/Manager billing pages, cashier invoice/payment/refund flows, active manager selection, navigation, validation, and query invalidation.
+- Reused the existing invoices/payments schema; no migration or dependency was required.
+
+Changed files:
+
+- Added `src/modules/payments/` and backend payment API/service tests.
+- Added `frontend/src/features/payments/`, billing routes/navigation/domain/query keys/styles, and frontend payment tests.
+- Updated the ticket cashier list scope, readiness transition candidates, module/API/database maps, business/workflow/authorization docs, READMEs, and current task status.
+
+Verification:
+
+- Backend typecheck/build passed; all 164 backend tests passed; Phase 9 read/lock queries executed successfully against MySQL.
+- Frontend typecheck/lint/build passed; all 27 frontend tests passed.
+
+Remaining:
+
+- Phase 10 delivery, reviews, and operational reports.
+
+## 2026-07-15 — Registration and user-profile UI polish
+
+Completed:
+
+- Added required customer password confirmation with matching validation while keeping `confirmPassword` out of the registration API payload.
+- Reworked the registration card into responsive contact/security sections with clearer hierarchy and password guidance.
+- Added a reusable avatar component with real-image support, initials fallback, and broken-image fallback.
+- Fixed the profile CSS selector that replaced the avatar's centering display mode and caused the user image to shift.
+- Improved sidebar, topbar, customer profile, staff profile, and mobile user-information alignment and styling.
+- Added automated password-mismatch coverage.
+
+Changed files:
+
+- Updated registration schema/page and validation tests under `frontend/src/features/auth/` and `frontend/src/components/ui/`.
+- Added `frontend/src/components/ui/user-avatar.tsx`.
+- Updated app layout, profile page, and targeted shared styles.
+- Updated `.ai/current-task.md` and task history.
+
+Verification:
+
+- Frontend typecheck/lint/build passed; all 23 frontend tests passed.
+- No backend, database, dependency, or API contract change was introduced.
+
+Remaining:
+
+- Phase 9 invoices, payments, refunds, and billing readiness.
+
+## 2026-07-15 — Phase 8 Repair Actions, Testing, and timeline
+
+Completed:
+
+- Implemented the seven-file Repair Actions backend module with scoped repair logs, unfinished-log edits, fulfilled-part attribution, append-only tests, technical completion/rework, and the aggregated ticket timeline.
+- Enforced active assignment/authorship, immutable finished logs, valid time ranges, cumulative used quantities bounded by ticket fulfillment, and ticket-row serialization for concurrent writes.
+- Added atomic `REPAIRING -> TESTING` on the first test result and completion to `COMPLETED` only when every latest normalized named result passes; failures return to `REPAIRING` without losing evidence.
+- Added completion timestamps, status history, customer notification, audit evidence, and sanitized customer repair/test/timeline views.
+- Integrated repair logs, fulfilled-part selectors, test entry, completion outcomes, PASS/FAIL badges, and the aggregated timeline into ticket detail.
+- Added 14 backend service/API tests and 3 frontend integration tests, and synchronized module/API/workflow/database/frontend/AI documentation.
+
+Changed files:
+
+- Added `src/modules/repair-actions/*`, `tests/repair-action-service.test.ts`, and `tests/repair-action-api.test.ts`.
+- Mounted ticket-scoped Repair Actions routes plus `/repair-logs/:id`, and extended ticket status persistence to set `completed_at`.
+- Added `frontend/src/features/repair-actions/*`; updated ticket detail, shared domain types/status badges/query keys, and timeline invalidation in prior workflow mutations.
+- Updated affected README, business/module/authorization/workflow documentation, and `.ai` maps/status/task files.
+
+Database changes:
+
+- No migration was required; the existing repair/test and supporting workflow tables were used.
+- Real MySQL timeline, repair-log, fulfilled/used part, test-result, and locking reads passed. No workflow fixture was persisted because the configured database has no repair tickets.
+
+API changes:
+
+- Added `GET/POST /api/v1/repair-tickets/:ticketId/repair-logs` and `PATCH /api/v1/repair-logs/:id`.
+- Added `GET/POST /api/v1/repair-tickets/:ticketId/test-results` and `POST /api/v1/repair-tickets/:ticketId/complete-testing`.
+- Added `GET /api/v1/repair-tickets/:ticketId/timeline` across eight implemented workflow event sources.
+
+Important decisions:
+
+- Repair-log parts attribute inventory already issued by Phase 7 and never create a second stock movement.
+- A non-null `finishedAt` is the available schema boundary for log immutability.
+- With no configured required-test catalog, the newest result for each case-insensitive trimmed test name is authoritative at completion.
+- Managers are read-only; active assigned technicians write; owning customers receive sanitized progress, tests, and timeline events.
+
+Verification:
+
+- Backend typecheck/build passed; all 148 backend tests passed.
+- Frontend typecheck/lint/build passed; all 22 frontend tests passed.
+- Phase 8 repository queries passed against real MySQL; SQL remains repository-only.
+
+Remaining:
+
+- Phase 9 invoices, partial payments, refunds, and billing readiness.
+
 ## 2026-07-15 — Phase 7 Parts, Inventory, and frontend integration
 
 Completed:

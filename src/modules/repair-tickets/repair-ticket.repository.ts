@@ -365,6 +365,18 @@ export class RepairTicketRepository {
             WHEN ? = 'RECEIVED' THEN COALESCE(received_at, CURRENT_TIMESTAMP)
             ELSE received_at
           END,
+          completed_at = CASE
+            WHEN ? = 'COMPLETED' THEN COALESCE(completed_at, CURRENT_TIMESTAMP)
+            ELSE completed_at
+          END,
+          delivered_at = CASE
+            WHEN ? = 'DELIVERED' THEN COALESCE(delivered_at, CURRENT_TIMESTAMP)
+            ELSE delivered_at
+          END,
+          closed_at = CASE
+            WHEN ? = 'CLOSED' THEN COALESCE(closed_at, CURRENT_TIMESTAMP)
+            ELSE closed_at
+          END,
           cancellation_reason = CASE
             WHEN ? = 'CANCELLED' THEN ?
             ELSE cancellation_reason
@@ -372,7 +384,7 @@ export class RepairTicketRepository {
         WHERE id = ?
           AND deleted_at IS NULL
       `,
-      [status, status, status, cancellationReason, ticketId],
+      [status, status, status, status, status, status, cancellationReason, ticketId],
     );
   }
 

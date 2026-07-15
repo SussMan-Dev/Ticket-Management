@@ -10,11 +10,11 @@ Review with overall, technician, and service ratings.
 
 ## Main files
 
-Planned under `src/modules/reviews/` using the standard seven-file module structure.
+Implemented under `src/modules/reviews/` using the standard seven-file module structure.
 
 ## Public APIs
 
-Create/get review under a ticket and patch by review ID. Planned for Phase 10.
+Create/get review under a ticket and patch by review ID. Implemented in Phase 10.
 
 ## Allowed roles
 
@@ -22,7 +22,7 @@ Only the owning customer creates/updates. Operational staff can read according t
 
 ## Business rules
 
-Ticket must be `DELIVERED` or `CLOSED`. Exactly one review per ticket. Ratings range from 1 to 5.
+Ticket must be `DELIVERED` or `CLOSED`. Exactly one review per ticket. Ratings range from 1 to 5. The owner may edit within seven days of creation.
 
 ## State transitions
 
@@ -34,7 +34,7 @@ No workflow status; create once, then owner edits within the configured policy w
 
 ## Transactions
 
-Single-row creation normally suffices; use a transaction if notification/audit side effects are added.
+Create/update and their audit evidence are committed in one transaction.
 
 ## Dependencies
 

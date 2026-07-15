@@ -6,10 +6,19 @@ import { validate } from "../../middlewares/validation.middleware.js";
 import { ticketAssignmentController } from "./ticket-assignment.controller.js";
 import {
   assignTicketSchema,
+  listAssignableTechniciansSchema,
   reassignTicketSchema,
 } from "./ticket-assignment.schema.js";
 
 export const ticketAssignmentRouter = Router();
+
+ticketAssignmentRouter.get(
+  "/assignable-technicians",
+  authenticate,
+  authorize("MANAGER"),
+  validate(listAssignableTechniciansSchema),
+  asyncHandler(ticketAssignmentController.listAssignableTechnicians),
+);
 
 ticketAssignmentRouter.post(
   "/:ticketId/assign",

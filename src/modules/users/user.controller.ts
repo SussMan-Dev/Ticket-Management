@@ -78,6 +78,23 @@ export const userController = {
     });
   },
 
+  async updateAvatar(request: Request, response: Response): Promise<Response> {
+    const { id } = request.validated?.params as UserIdParams;
+    const bytes = Buffer.isBuffer(request.body) ? request.body : Buffer.alloc(0);
+    const mimeType = request.get("content-type") ?? "";
+    const user = await userService.updateAvatar(
+      authenticatedUser(request),
+      id,
+      bytes,
+      mimeType,
+      metadata(request),
+    );
+    return sendSuccess(response, {
+      message: "Avatar updated successfully",
+      data: user,
+    });
+  },
+
   async updateStatus(request: Request, response: Response): Promise<Response> {
     const { id } = request.validated?.params as UserIdParams;
     const { status } = request.validated?.body as UpdateUserStatusBody;

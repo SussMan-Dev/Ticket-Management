@@ -26,6 +26,20 @@ afterEach(() => {
 });
 
 describe("ticket assignment API", () => {
+  it("returns active technician choices to a manager", async () => {
+    vi.spyOn(authService, "authenticate").mockResolvedValue({
+      id: 5, email: "manager@example.com", role: "MANAGER", sessionId,
+    });
+    const list = vi.spyOn(ticketAssignmentService, "listAssignableTechnicians")
+      .mockResolvedValue([{ id: 6, fullName: "Technician One", email: "technician@example.com" }]);
+    const response = await request(app)
+      .get(`${env.API_PREFIX}/repair-tickets/assignable-technicians`)
+      .set("Authorization", "Bearer manager-token");
+    expect(response.status).toBe(200);
+    expect(response.body.data[0]).toMatchObject({ id: 6, fullName: "Technician One" });
+    expect(list).toHaveBeenCalledWith(expect.objectContaining({ role: "MANAGER" }), {});
+  });
+
   it("allows a manager to assign a technician", async () => {
     vi.spyOn(authService, "authenticate").mockResolvedValue({
       id: 5,
@@ -67,6 +81,11 @@ describe("ticket assignment API", () => {
 
     expect(response.status).toBe(403);
     expect(assign).not.toHaveBeenCalled();
+
+    const lookup = await request(app)
+      .get(`${env.API_PREFIX}/repair-tickets/assignable-technicians`)
+      .set("Authorization", "Bearer technician-token");
+    expect(lookup.status).toBe(403);
   });
 
   it("requires an audited reason for reassignment", async () => {

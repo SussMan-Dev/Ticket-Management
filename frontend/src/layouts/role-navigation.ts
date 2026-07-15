@@ -14,18 +14,18 @@ const operational: NavigationItem[] = [
 export function navigationForRole(role: UserRole): NavigationItem[] {
   switch (role) {
     case "CUSTOMER":
-      return [...common, { label: "Thiết bị của tôi", to: "/devices", icon: "▣" }, ...operational];
+      return [...common, { label: "Thiết bị của tôi", to: "/devices", icon: "▣" }, ...operational, { label: "Hóa đơn", to: "/invoices", icon: "₫" }];
     case "RECEPTIONIST":
       return [...common, { label: "Khách hàng", to: "/customers", icon: "◎" }, { label: "Thiết bị", to: "/devices", icon: "▣" }, ...operational];
     case "TECHNICIAN":
       return [...common, ...operational, { label: "Catalog linh kiện", to: "/parts", icon: "◇" }, { label: "Yêu cầu của tôi", to: "/part-requests", icon: "⇄" }];
     case "MANAGER":
-      return [...common, ...operational, { label: "Khách hàng", to: "/customers", icon: "◎" }, { label: "Linh kiện", to: "/parts", icon: "◇" }, { label: "Part requests", to: "/part-requests", icon: "⇄" }];
+      return [...common, ...operational, { label: "Khách hàng", to: "/customers", icon: "◎" }, { label: "Linh kiện", to: "/parts", icon: "◇" }, { label: "Part requests", to: "/part-requests", icon: "⇄" }, { label: "Hóa đơn", to: "/invoices", icon: "₫" }, { label: "Báo cáo", to: "/reports", icon: "▥" }];
     case "ADMIN":
       return [...common, { label: "Tài khoản", to: "/users", icon: "♙" }];
     case "INVENTORY_STAFF":
-      return [...common, { label: "Linh kiện & kho", to: "/parts", icon: "◇" }, { label: "Part requests", to: "/part-requests", icon: "⇄" }];
+      return [...common, { label: "Linh kiện & kho", to: "/parts", icon: "◇" }, { label: "Part requests", to: "/part-requests", icon: "⇄" }, { label: "Báo cáo kho", to: "/reports", icon: "▥" }];
     case "CASHIER":
-      return [...common, { label: "Module mở rộng", to: "/extension", icon: "+" }];
+      return [...common, { label: "Hóa đơn & thanh toán", to: "/invoices", icon: "₫" }];
   }
 }

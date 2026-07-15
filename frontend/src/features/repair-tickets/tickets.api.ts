@@ -85,6 +85,7 @@ function useTicketMutation<TInput>(
         queryClient.invalidateQueries({ queryKey: ["repair-tickets"] }),
         queryClient.invalidateQueries({ queryKey: queryKeys.ticket(ticket.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.ticketHistory(ticket.id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.ticketTimeline(ticket.id) }),
         ticketId && ticketId !== ticket.id
           ? queryClient.invalidateQueries({ queryKey: queryKeys.ticket(ticketId) })
           : Promise.resolve(),

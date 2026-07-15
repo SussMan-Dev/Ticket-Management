@@ -8,6 +8,7 @@
 - Login failures are generic. IP rate limiting and account failed-attempt tracking apply together.
 - Refresh-token replay revokes the affected session and creates an audit event.
 - Role or non-active status changes revoke all target sessions. The final active administrator cannot be disabled or demoted.
+- Avatar uploads are self- or Admin-scoped, accept only signature-validated JPEG/PNG/WebP images up to the configured size, use random server filenames, and never trust a client file path.
 
 ## Ownership and authorization
 
@@ -61,12 +62,27 @@
 - Fulfillment may be partial, but it cannot exceed the outstanding requested quantity or available stock. Request items, part balances, movement history, ticket history, notifications, and audit records are not overwritten.
 - Phase 7 exposes no return or request-cancellation endpoint; those reserved schema states require a later explicit workflow.
 
+## Repair and testing
+
+- Only the active assigned technician writes repair logs and test results. Managers are read-only; customers receive sanitized progress and result views for their own tickets.
+- Repair logs are editable only while unfinished and the ticket is `REPAIRING`. Once `finished_at` is set, the log and its part attribution are immutable.
+- Repair-log part quantities attribute stock already fulfilled for the ticket; they never decrement inventory again, and cumulative attributed usage cannot exceed cumulative fulfillment.
+- Tests require at least one finished repair log and are append-only. Recording the first test of a round moves `REPAIRING` to `TESTING` atomically.
+- With no configured test catalog, the latest result for each normalized test name defines the completion gate. All must pass for `COMPLETED`; any latest failure returns the ticket to `REPAIRING`.
+- Technical completion sets the ticket completion timestamp, appends status history, notifies the customer, and creates an audit record in the same transaction.
+
 ## Payments and delivery
 
-- Cumulative valid payments cannot exceed the invoice total. Completed payments are not edited; corrections use a controlled refund/adjustment workflow.
-- Invoice balance and payment rows change in one transaction.
+- A locked `COMPLETED` ticket may receive exactly one invoice, whose subtotal/discount/tax/total are copied from the accepted quotation by the server.
+- Cumulative valid payments cannot exceed the invoice total. Amounts use two-decimal cent comparisons under an invoice lock.
+- Completed payment amount, method, reference, receiver, and time are not edited. A correction refunds one whole completed payment by changing only its status to `REFUNDED`.
+- Refund requires a distinct active manager approval identity and reason, is bounded by the locked valid paid amount, and records cashier/manager/before-after evidence in audit.
+- Invoice balance, payment/refund, ticket status/history, notification, and audit rows change in one transaction.
+- Full payment moves `COMPLETED → READY_FOR_DELIVERY`; a refund before delivery moves `READY_FOR_DELIVERY → COMPLETED`.
 - Delivery normally requires full payment. A manager exception must be explicit and audited.
-- A delivered or closed ticket can receive exactly one review from its owning customer, with ratings from 1 to 5.
+- Handover creates one delivery row, optional proof attachment, `DELIVERED` status/history, customer notification, and audit evidence atomically. Final closure requires `DELIVERED` and the persisted delivery row.
+- A delivered or closed ticket can receive exactly one review from its owning customer, with ratings from 1 to 5; owner edits expire after seven days.
+- Report ranges are server-bounded to 366 days. Finance/operations aggregates are Manager-only; inventory staff receive only parts-usage and low-stock data; revenue derives from valid payment status rather than invoice face value.
 
 ## Audit and retention
 

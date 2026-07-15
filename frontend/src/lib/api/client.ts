@@ -8,6 +8,7 @@ let authenticationFailureHandler: (() => void) | null = null;
 
 interface RequestOptions extends Omit<RequestInit, "body"> {
   body?: unknown;
+  rawBody?: BodyInit;
   retryUnauthorized?: boolean;
 }
 
@@ -15,6 +16,20 @@ async function readBody(response: Response): Promise<unknown> {
   if (response.status === 204) return null;
   const contentType = response.headers.get("content-type") ?? "";
   return contentType.includes("application/json") ? response.json() : null;
+}
+
+async function readBlobBytes(file: Blob): Promise<ArrayBuffer> {
+  if (typeof file.arrayBuffer === "function") return file.arrayBuffer();
+
+  return new Promise<ArrayBuffer>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error ?? new Error("Unable to read selected file"));
+    reader.onload = () => {
+      if (reader.result instanceof ArrayBuffer) resolve(reader.result);
+      else reject(new Error("Unable to read selected file"));
+    };
+    reader.readAsArrayBuffer(file);
+  });
 }
 
 async function rawRequest<T, TMeta = null>(path: string, options: RequestOptions = {}): Promise<ApiSuccess<T, TMeta>> {
@@ -28,7 +43,7 @@ async function rawRequest<T, TMeta = null>(path: string, options: RequestOptions
     : new URL(`${API_BASE_URL}${path}`, window.location.origin).toString();
   const response = await fetch(requestUrl, {
     ...options,
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    body: options.rawBody ?? (options.body === undefined ? undefined : JSON.stringify(options.body)),
     credentials: "include",
     headers,
   });
@@ -85,6 +100,14 @@ export const apiClient = {
   },
   patch<T, TMeta = null>(path: string, body: unknown) {
     return request<T, TMeta>(path, { method: "PATCH", body });
+  },
+  async upload<T, TMeta = null>(path: string, file: Blob) {
+    const rawBody = await readBlobBytes(file);
+    return request<T, TMeta>(path, {
+      method: "POST",
+      rawBody,
+      headers: { "Content-Type": file.type },
+    });
   },
   delete<T, TMeta = null>(path: string) {
     return request<T, TMeta>(path, { method: "DELETE" });

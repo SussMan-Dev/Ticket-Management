@@ -26,14 +26,34 @@ export function DiagnosisPanel({ ticket }: { ticket: RepairTicket }) {
   return <section className="detail-section" aria-labelledby="diagnosis-title"><div className="section-heading"><div><span className="eyebrow">Phase 5</span><h2 id="diagnosis-title">Chẩn đoán kỹ thuật</h2></div>{latest ? <StatusBadge value={latest.status} /> : null}</div>{!latest && !canCreate ? <EmptyState title="Chưa có chẩn đoán" description={user.role === "CUSTOMER" ? "Chẩn đoán đã duyệt sẽ xuất hiện tại đây." : "Kỹ thuật viên được phân công sẽ tạo bản chẩn đoán."} /> : null}{canCreate ? <DiagnosisForm ticketId={ticket.id} /> : null}{latest ? <DiagnosisRecord diagnosis={latest} role={user.role} /> : null}</section>;
 }
 
-function DiagnosisRecord({ diagnosis, role }: { diagnosis: Diagnosis; role: import("../../types/domain").UserRole }) {
+export function DiagnosisRecord({ diagnosis, role }: { diagnosis: Diagnosis; role: import("../../types/domain").UserRole }) {
   const editable = canEditDiagnosis(role, diagnosis.status);
   const submit = useSubmitDiagnosis(diagnosis.ticketId, diagnosis.id);
   const approve = useApproveDiagnosis(diagnosis.ticketId, diagnosis.id);
   const revision = useRequestDiagnosisRevision(diagnosis.ticketId, diagnosis.id);
   const [confirm, setConfirm] = useState<"submit" | "approve" | null>(null);
   const [revisionReason, setRevisionReason] = useState("");
-  if (editable) return <DiagnosisForm ticketId={diagnosis.ticketId} diagnosis={diagnosis} />;
+  if (editable) return <>
+    <DiagnosisForm ticketId={diagnosis.ticketId} diagnosis={diagnosis} />
+    {canSubmitDiagnosis(role, diagnosis.status) ? <Card className="diagnosis-card diagnosis-submit-card">
+      <div className="section-heading">
+        <div>
+          <h3>Gửi chẩn đoán cho quản lý</h3>
+          <p>Hãy lưu các thay đổi trong biểu mẫu phía trên trước khi gửi. Sau khi gửi, nội dung sẽ chuyển sang chỉ đọc.</p>
+        </div>
+        <Button onClick={() => setConfirm("submit")}>Gửi duyệt chẩn đoán</Button>
+      </div>
+      <MutationError error={submit.error} />
+      <ConfirmDialog
+        open={confirm === "submit"}
+        title="Gửi chẩn đoán để duyệt?"
+        description="Bản chẩn đoán đã lưu sẽ chuyển sang read-only cho đến khi quản lý duyệt hoặc yêu cầu chỉnh sửa."
+        loading={submit.isPending}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => submit.mutate(undefined, { onSuccess: () => setConfirm(null) })}
+      />
+    </Card> : null}
+  </>;
   return <><Card className="diagnosis-card"><dl className="detail-list detail-list--two"><div><dt>Vấn đề thực tế</dt><dd>{diagnosis.actualIssue}</dd></div>{diagnosis.rootCause !== undefined ? <div><dt>Nguyên nhân gốc</dt><dd>{diagnosis.rootCause ?? "—"}</dd></div> : null}<div><dt>Giải pháp đề xuất</dt><dd>{diagnosis.proposedSolution}</dd></div><div><dt>Chi phí công dự kiến</dt><dd>{formatMoney(diagnosis.laborCost)}</dd></div><div><dt>Thời gian dự kiến</dt><dd>{diagnosis.estimatedHours === null ? "—" : `${diagnosis.estimatedHours} giờ`}</dd></div><div><dt>Rủi ro mất dữ liệu</dt><dd>{diagnosis.dataLossRisk ? "Có" : "Không"}</dd></div>{diagnosis.riskNote !== undefined ? <div><dt>Ghi chú rủi ro nội bộ</dt><dd>{diagnosis.riskNote ?? "—"}</dd></div> : null}<div><dt>Phê duyệt</dt><dd>{formatDateTime(diagnosis.approvedAt)}</dd></div></dl><h3>Linh kiện đề nghị</h3>{diagnosis.parts.length === 0 ? <p className="muted">Không có linh kiện.</p> : <div className="parts-list">{diagnosis.parts.map((part) => <div key={part.id}><span><strong>{part.name}</strong><small>{part.sku} · ID #{part.partId}</small></span><span>x{part.quantity}</span></div>)}</div>}{canSubmitDiagnosis(role, diagnosis.status) ? <Button onClick={() => setConfirm("submit")}>Gửi duyệt chẩn đoán</Button> : null}{canReviewDiagnosis(role, diagnosis.status) ? <div className="review-actions"><div><FormField label="Lý do yêu cầu chỉnh sửa" htmlFor="revision-reason" hint="Bắt buộc khi trả lại kỹ thuật viên."><textarea id="revision-reason" rows={2} value={revisionReason} onChange={(event) => setRevisionReason(event.target.value)} /></FormField><Button variant="secondary" disabled={revisionReason.trim().length < 3} loading={revision.isPending} onClick={() => revision.mutate(revisionReason)}>Yêu cầu chỉnh sửa</Button></div><Button onClick={() => setConfirm("approve")}>Duyệt chẩn đoán</Button></div> : null}<MutationError error={submit.error ?? approve.error ?? revision.error} /></Card><ConfirmDialog open={confirm !== null} title={confirm === "approve" ? "Duyệt chẩn đoán?" : "Gửi chẩn đoán để duyệt?"} description={confirm === "approve" ? "Sau khi duyệt, phiếu chuyển sang chờ báo giá và nội dung khách hàng được phép xem sẽ được mở." : "Nội dung sẽ chuyển sang read-only cho đến khi quản lý yêu cầu chỉnh sửa."} loading={submit.isPending || approve.isPending} onClose={() => setConfirm(null)} onConfirm={() => { const mutation = confirm === "approve" ? approve : submit; mutation.mutate(undefined, { onSuccess: () => setConfirm(null) }); }} /></>;
 }
 

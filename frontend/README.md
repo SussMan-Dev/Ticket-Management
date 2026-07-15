@@ -10,6 +10,8 @@ Production-oriented React client for the Repair Ticket Management System. The ap
 - Vitest, React Testing Library, and MSW
 - A custom responsive, accessible design system with no runtime UI framework
 
+The shared application shell keeps the sticky header, page content, and footer on one responsive content grid. Cards, forms, data tables, and page actions use common spacing and alignment rules across desktop and mobile views; authentication screens reuse the same branded footer in a compact layout.
+
 ## Setup
 
 Requirements: Node.js 20+ and the backend running locally.
@@ -49,31 +51,34 @@ npm run build
 |---|---|---|
 | `/login`, `/register` | Public | Login and customer self-registration |
 | `/` | Authenticated | Role-specific dashboard |
-| `/profile` | Authenticated | Safe profile fields |
+| `/profile` | Authenticated | Safe profile fields and local avatar upload |
 | `/users` | ADMIN | User list, staff creation, role/status control |
 | `/customers`, `/customers/:id` | RECEPTIONIST, MANAGER | Customer lookup/intake |
 | `/devices` | CUSTOMER, RECEPTIONIST, MANAGER | Scoped device create/list/soft-delete |
-| `/tickets`, `/tickets/new`, `/tickets/:id` | Operational roles per backend | Ticket intake, detail, status history, attachments and workflow actions |
+| `/tickets`, `/tickets/new`, `/tickets/:id` | Operational roles per backend | Complete ticket workflow including assignment, diagnosis, quotation, repair/testing, delivery/closure, review, and timeline |
 | `/tickets/:ticketId/quotations/:quotationId` | CUSTOMER, assigned TECHNICIAN, MANAGER | Phase 6 quotation detail and role/state actions backed by the API |
 | `/parts` | TECHNICIAN, INVENTORY_STAFF, MANAGER | Role-safe catalog; inventory staff maintenance/movements; manager ledger view |
 | `/part-requests` | TECHNICIAN, INVENTORY_STAFF, MANAGER | Own technician requests, inventory decisions/fulfillment, manager visibility |
-| `/extension` | CASHIER | Explicit placeholder for the later payment phase |
+| `/invoices`, `/invoices/:invoiceId` | CUSTOMER own, CASHIER, MANAGER | Invoice list/detail, partial collection, immutable history, and approved whole-payment refund |
+| `/notifications` | Authenticated | Recipient-scoped updates and read state |
+| `/reports` | MANAGER, INVENTORY_STAFF | Role-specific operational and inventory reporting |
 
 Admin navigation intentionally excludes repair operations. Customer forms do not expose `customerId`, priority, or SLA dates. Technician and customer data remain scoped by backend ownership/active assignment checks; role-aware menus are UX only.
 
 ## Authentication model
 
 - The access token exists only in module memory and is never written to local/session storage.
+- Customer registration confirms the password in-browser; the confirmation field is validated locally and never sent to the API.
 - Refresh token transport is the backend HttpOnly cookie; browser requests use `credentials: "include"`.
 - Reload restoration calls `/auth/refresh-token` and then `/auth/me`.
 - Concurrent 401 responses share one refresh promise. Each original request is retried once.
 - A failed refresh clears the in-memory session and TanStack Query cache.
 - 401, 403, 404, 409, and 422 envelopes are preserved as typed `ApiError` values. Conflicts and validation errors receive explicit UI guidance.
 
-## Integrated backend APIs (Phases 1–7)
+## Integrated backend APIs (Phases 1–10)
 
 - Auth: register, login, refresh, logout, current user
-- Users: list/create/update, status and role
+- Users: list/create/update, validated JPEG/PNG/WebP avatar upload, status and role
 - Customers: list/detail/create/update
 - Devices: list/create/delete and category/brand catalogs
 - Repair tickets: list/detail/create, receive, configured hold/resume, cancel, history and attachment metadata
@@ -82,25 +87,40 @@ Admin navigation intentionally excludes repair operations. Customer forms do not
 - Quotations: list/detail/create/update/submit/approve/send/accept/reject
 - Parts: catalog list/detail/create/update, stock-in, signed adjustment, and movement history
 - Part requests: ticket-scoped create, scoped list/detail, approve, reject, and partial fulfillment
+- Repair actions: scoped repair logs, fulfilled-part attribution, append-only tests, technical completion/rework, and aggregated timeline
+- Billing: server-calculated invoice list/detail/create, partial/full payments, active manager refund approvers, and whole-payment refund
+- Notifications: paginated list, unread count, mark-one, and mark-all read state
+- Delivery: normal paid handover, audited Manager exception, proof metadata, final closure, and customer-safe view
+- Reviews: owner-only post-delivery creation and seven-day editing with authorized staff reads
+- Reports: Manager dashboard/revenue/performance/timing and Manager/Inventory parts usage/low-stock
 
 All UI calls go through typed feature API functions and centralized query keys. Components do not call `fetch` directly.
 
-## Phase 6–7 quotation and inventory integration
+## Phase 6–10 workflow integration
 
 - `quotation.gateway.ts` binds the pages to the implemented Phase 6 REST endpoints.
 - Creating a draft sends only the expiry; the backend generates initial items from the approved diagnosis.
 - Draft PART edits send only `partId` and quantity. Catalog descriptions, prices, line totals, and header totals remain server-authoritative.
 - Role/status actions map to submit, approve, send, accept, and reject endpoints; successful mutations invalidate quotation, ticket, and status-history queries.
+- A sent, unexpired quotation shows accept/reject controls directly on the owning customer's ticket page as well as on quotation detail.
 - Expired and superseded versions render read-only. The backend remains authoritative if browser time or cached ticket state is stale.
 - Diagnosis and quotation PART lines use the active catalog rather than accepting raw numeric IDs.
 - Technicians can create ticket requests from catalog selections. Inventory staff can manage stock and fulfill outstanding quantities; managers receive read-only visibility.
 - Successful stock/request mutations invalidate the affected catalog, request, ticket, and status-history queries.
+- Assigned technicians record repair logs only from fulfilled parts; finishing a log makes it read-only. Customers receive the backend-sanitized progress view.
+- Tests are appended after a finished repair log. The completion action renders the server outcome and refreshes ticket, status-history, repair/test, and timeline caches.
+- Ticket detail uses the Phase 8 aggregated timeline instead of presenting status history as the complete operational history.
+- Cashiers choose only completed tickets for invoice creation; invoice totals are rendered from the server snapshot and are never editable in the browser.
+- Payment/refund mutations invalidate invoice, payment, ticket, and history caches so delivery readiness always follows backend state.
+- Manager assignment uses a server-filtered active/unlocked technician selector rather than a raw numeric ID.
+- Notification counts refresh in the app header; reference links mark items read and navigate to the related ticket or invoice.
+- Ticket detail owns handover, closure, review, and the final invoice/payment/delivery/review timeline events.
+- Report pages enforce role-specific endpoints and bounded date filters without exposing customer PII.
 
-## Known backend contract gaps
+## Scope status
 
-- Managers can assign a `technicianId`, but Phase 5 exposes no manager-authorized technician lookup endpoint. The UI accepts a verified numeric ID and states the limitation.
-- Cashier APIs remain planned for Phase 9, so the cashier navigation still uses an explicit extension point.
+All planned Phase 1–10 backend contracts are connected to the frontend. Further UI work should be treated as a new product extension or deployment/UAT task.
 
 ## Test coverage
 
-The suite covers login/logout transport, single-flight refresh and one-time retry, error envelopes, protected/role routes, role navigation, customer ownership UI, assignment and diagnosis state rules, quotation role/status/expiry rules, parts/request routing and mutation invalidation, and 409/422 handling.
+The suite covers login/logout transport, single-flight refresh and one-time retry, error envelopes, protected/role routes, role navigation, customer ownership UI, assignment and diagnosis state rules, quotation role/status/expiry rules, parts/request routing, repair/test/timeline mutation invalidation, billing money/refund validation and cache invalidation, and 409/422 handling. Phase 10 backend tests cover notification recipient scope, delivery/payment exception/closure, review ownership/edit policy, and report roles/ranges.

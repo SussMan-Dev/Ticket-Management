@@ -43,6 +43,16 @@ export interface TicketAssignment {
   note: string | null;
 }
 
+export interface AssignableTechnician {
+  id: number;
+  fullName: string;
+  email: string;
+}
+
+export function toAssignableTechnician(row: AssignableTechnicianRow): AssignableTechnician {
+  return { id: row.id, fullName: row.full_name, email: row.email };
+}
+
 export function toTicketAssignment(row: TicketAssignmentRow): TicketAssignment {
   return {
     id: row.id,

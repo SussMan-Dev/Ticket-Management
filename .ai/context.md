@@ -6,10 +6,10 @@ This file is the short entry point requested by IDE/agent workflows. Detailed, c
 
 - Project: Repair Ticket Management System using Node.js, Express, TypeScript, MySQL 8, `mysql2/promise`, and raw parameterized SQL.
 - Architecture: Route -> Middleware -> Controller -> Service -> Repository -> MySQL.
-- Completed: Phases 1–7, through the parts catalog, stock ledger, and part-request fulfillment.
-- Verified: backend typecheck/build and 134 tests; frontend typecheck/lint/build and 19 tests; Phase 7 read, write, ledger, and locking queries against MySQL with rollback-safe verification.
-- Frontend: standalone React app under `frontend/` integrates Phases 1–7, including role-safe parts/request workspaces and catalog selectors for diagnosis and quotation lines.
-- Next: Phase 8 repair logs, fulfilled-part usage, testing, and technical completion.
+- Completed: Phases 1–10, from secure intake through delivery/closure, review, notifications, and reporting.
+- Verified: backend typecheck/build and 198 tests; frontend typecheck/lint/build and 34 tests; report/timeline SQL smoke-tested against MySQL.
+- Frontend: standalone React app under `frontend/` integrates all planned phases, including technician selection, billing, notification center, delivery/closure, review, reporting controls, and local profile-avatar selection.
+- Next: deployment/UAT or an explicitly scoped product extension.
 
 ## Phase 5 capabilities
 
@@ -21,7 +21,7 @@ This file is the short entry point requested by IDE/agent workflows. Detailed, c
 
 ## Workflow boundary
 
-Phases 4–7 expose intake, assignment, diagnosis, quotation/customer-decision, and part-request transitions through their owning services. The generic manager endpoint remains restricted to `RECEIVED <-> ON_HOLD`. Repair/testing, payment, delivery, closure, and timeline transitions remain owned by later phases.
+Phases 4–10 expose intake, assignment, diagnosis, quotation/customer-decision, part-request, repair, testing, payment, delivery, and closure transitions through their owning services. The generic manager endpoint remains restricted to `RECEIVED <-> ON_HOLD`; delivery and closure remain owned by the Delivery service.
 
 ## Canonical files
 

@@ -34,6 +34,12 @@ const technician = {
   role: "TECHNICIAN" as const,
   sessionId: "775258a7-12e0-49c4-916d-3f58d6574a19",
 };
+const cashier = {
+  id: 7,
+  email: "cashier@example.com",
+  role: "CASHIER" as const,
+  sessionId: "994efcd7-1953-4161-8124-aa32ee32b257",
+};
 
 function row(overrides: Record<string, unknown> = {}): RepairTicketRow {
   const now = new Date();
@@ -99,7 +105,7 @@ function dependencies() {
 }
 
 describe("RepairTicketService", () => {
-  it("scopes customer and technician lists at the repository boundary", async () => {
+  it("scopes customer, technician, and cashier lists at the repository boundary", async () => {
     const deps = dependencies();
     deps.repository.list.mockResolvedValue({ rows: [row()], total: 1 });
     const query = {
@@ -118,6 +124,23 @@ describe("RepairTicketService", () => {
     expect(deps.repository.list).toHaveBeenLastCalledWith(
       expect.objectContaining({ assignedTechnicianId: 6 }),
     );
+
+    await deps.service.list(cashier, query);
+    expect(deps.repository.list).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: "COMPLETED" }),
+    );
+  });
+
+  it("rejects cashier attempts to broaden the billing ticket scope", async () => {
+    const deps = dependencies();
+    await expect(deps.service.list(cashier, {
+      page: 1,
+      limit: 20,
+      status: "REPAIRING",
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    })).rejects.toMatchObject({ code: "BILLING_TICKET_SCOPE_REQUIRED" });
+    expect(deps.repository.list).not.toHaveBeenCalled();
   });
 
   it("blocks cross-customer detail and requires an active technician assignment", async () => {

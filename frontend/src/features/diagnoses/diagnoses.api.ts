@@ -35,6 +35,7 @@ function useDiagnosisMutation<TInput>(
         queryClient.invalidateQueries({ queryKey: queryKeys.diagnoses(ticketId) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.ticket(ticketId) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.ticketHistory(ticketId) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.ticketTimeline(ticketId) }),
       ]);
     },
   });

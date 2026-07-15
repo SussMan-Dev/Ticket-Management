@@ -20,6 +20,10 @@ const environmentSchema = z.object({
     .regex(/^\/[a-zA-Z0-9/_-]*$/, "API_PREFIX must start with /")
     .default("/api/v1"),
   REQUEST_BODY_LIMIT: z.string().trim().min(1).default("1mb"),
+  PUBLIC_BASE_URL: z.string().trim().url().optional(),
+  UPLOAD_DIRECTORY: z.string().trim().min(1).default("uploads"),
+  IMAGE_UPLOAD_MAX_BYTES: z.coerce.number().int().min(1_024).max(20 * 1_024 * 1_024)
+    .default(5 * 1_024 * 1_024),
   TRUST_PROXY: booleanFromString,
   DB_HOST: z.string().trim().min(1).default("127.0.0.1"),
   DB_PORT: z.coerce.number().int().min(1).max(65_535).default(3_306),
@@ -56,6 +60,7 @@ const parsedEnvironment = result.data;
 
 export const env = Object.freeze({
   ...parsedEnvironment,
+  PUBLIC_BASE_URL: parsedEnvironment.PUBLIC_BASE_URL ?? `http://localhost:${parsedEnvironment.PORT}`,
   CORS_ORIGINS: parsedEnvironment.CORS_ORIGINS.split(",")
     .map((origin) => origin.trim())
     .filter(Boolean),

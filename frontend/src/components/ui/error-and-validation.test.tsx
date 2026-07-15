@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { diagnosisSchema } from "../../features/diagnoses/diagnosis.schemas";
+import { registerSchema } from "../../features/auth/auth.schemas";
 import { ApiError } from "../../lib/api/api-error";
 import { MutationError } from "./data-state";
 
@@ -19,5 +20,22 @@ describe("409/422 và field validation", () => {
     const result = diagnosisSchema.safeParse({ actualIssue: "Lỗi nguồn", proposedSolution: "Thay nguồn", laborCost: 0, dataLossRisk: false, parts: [{ partId: 2, quantity: 1 }, { partId: 2, quantity: 0 }] });
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error.issues.map((issue) => issue.message)).toEqual(expect.arrayContaining(["Linh kiện không được trùng"]));
+  });
+
+  it("yêu cầu xác nhận mật khẩu khách hàng phải trùng khớp", () => {
+    const result = registerSchema.safeParse({
+      fullName: "Khách Hàng",
+      email: "customer@example.com",
+      phone: "",
+      password: "Secure123",
+      confirmPassword: "Different123",
+      address: "",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.confirmPassword).toContain(
+        "Mật khẩu xác nhận không khớp",
+      );
+    }
   });
 });

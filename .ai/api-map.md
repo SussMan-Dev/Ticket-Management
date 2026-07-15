@@ -1,6 +1,6 @@
 # API Map
 
-Base URL: `/api/v1`. Phases 1 through 7 are implemented. Endpoints from later phases remain planned unless their section says otherwise.
+Base URL: `/api/v1`. Phases 1 through 10 are implemented.
 
 ## Health
 
@@ -31,7 +31,7 @@ Rules: only customer self-registration; generic credential errors; hash password
 
 ## Users
 
-Status: implemented in Phase 2. List/detail/create/status/role require `ADMIN`; safe profile patch permits self or admin.
+Status: implemented in Phase 2 and extended with validated avatar upload. List/detail/create/status/role require `ADMIN`; safe profile and avatar updates permit self or admin.
 
 Controller/service/repository: `userController`, `userService`, `userRepository`. Tables: `users`, `roles`, `auth_sessions`, `audit_logs`.
 
@@ -41,10 +41,11 @@ Controller/service/repository: `userController`, `userService`, `userRepository`
 | `GET /users/:id` | ADMIN | No | 2 |
 | `POST /users` | ADMIN | Yes | 2 |
 | `PATCH /users/:id` | ADMIN; self for safe fields | Usually no | 2 |
+| `POST /users/:id/avatar` | ADMIN; self | DB transaction plus guarded file replacement | Extension |
 | `PATCH /users/:id/status` | ADMIN | Yes | 2 |
 | `PATCH /users/:id/role` | ADMIN | Yes | 2 |
 
-Rules: explicit safe columns, bounded pagination/sort whitelist, staff-only creation, audit role/status changes, revoke sessions as policy requires.
+Rules: explicit safe columns, bounded pagination/sort whitelist, staff-only creation, audit profile/role/status changes, revoke sessions as policy requires. Avatar upload accepts only configured-size JPEG/PNG/WebP bytes whose signatures match the MIME type, stores a random filename, and removes the prior locally managed image only after the database transaction succeeds.
 
 ## Customers
 
@@ -87,7 +88,7 @@ Rules: verify customer ownership; require an active customer for creation; requi
 
 ## Repair Tickets
 
-Status: implemented in Phase 4 for intake CRUD, visibility, receive, hold/resume, cancellation, status history, and URL-based attachment metadata. Assignment and downstream workflow transitions remain owned by later phases.
+Status: implemented through Phase 10 for intake CRUD, visibility, receive, hold/resume, cancellation, status history, URL-based attachment metadata, assignment integration, the complete aggregated timeline, and cashier completed-ticket lookup. Downstream workflow transitions remain owned by their modules.
 
 Controller/service/repository: `repairTicketController`, `repairTicketService`, `repairTicketRepository`. Core tables: `repair_tickets`, `ticket_status_history`, `ticket_attachments`; assignment endpoints also use `ticket_assignments`.
 
@@ -100,6 +101,7 @@ Controller/service/repository: `repairTicketController`, `repairTicketService`, 
 | `POST /repair-tickets/:id/receive` | RECEPTIONIST | Yes | 4 |
 | `POST /repair-tickets/:id/assign` | MANAGER | Yes | 5 (implemented) |
 | `POST /repair-tickets/:id/reassign` | MANAGER | Yes | 5 (implemented) |
+| `GET /repair-tickets/assignable-technicians` | MANAGER | No | 5/10 integration |
 | `POST /repair-tickets/:id/change-status` | MANAGER hold/resume in Phase 4; owning workflow role later | Yes | 4+ |
 | `POST /repair-tickets/:id/cancel` | Owner in allowed state, MANAGER | Yes | 4 |
 | `GET /repair-tickets/:id/status-history` | Same visibility as ticket | No | 4 |
@@ -174,6 +176,8 @@ Rules: new parts start at zero balance; technician reads omit purchase prices; r
 
 ## Repair Logs and Testing
 
+Status: implemented in Phase 8 with active-assignee writes, immutable completed logs, fulfilled-part attribution, append-only tests, guarded technical completion/rework, audit/notification, and sanitized timeline reads.
+
 Controller/service/repository: `repairActionController`, `repairActionService`, `repairActionRepository`. Tables: `repair_logs`, `repair_log_parts`, `test_results`, inventory and ticket history.
 
 | Method and path | Roles | Transaction | Phase |
@@ -182,12 +186,14 @@ Controller/service/repository: `repairActionController`, `repairActionService`, 
 | `POST /repair-tickets/:ticketId/repair-logs` | Assigned TECHNICIAN | Yes when parts consumed | 8 |
 | `PATCH /repair-logs/:id` | Assigned author while editable | Usually no | 8 |
 | `GET /repair-tickets/:ticketId/test-results` | Owner safe view, assigned TECHNICIAN, MANAGER | No | 8 |
-| `POST /repair-tickets/:ticketId/test-results` | Assigned TECHNICIAN | No | 8 |
+| `POST /repair-tickets/:ticketId/test-results` | Assigned TECHNICIAN | Yes when testing starts | 8 |
 | `POST /repair-tickets/:ticketId/complete-testing` | Assigned TECHNICIAN | Yes | 8 |
 
-Rules: append/preserve technical history; part usage must be fulfilled; valid time range; required passing tests for completion; failure returns ticket to repair atomically.
+Rules: active assigned author; `REPAIRING`-only log mutation; non-null finish makes log/parts immutable; cumulative part attribution is bounded by fulfilled ticket quantities and never decrements stock twice; tests require a finished log and are append-only; the first test starts `TESTING`; newest normalized named results must all pass for `COMPLETED`, otherwise completion returns to `REPAIRING`; status/history/notification/audit are atomic; customer reads are sanitized.
 
 ## Invoices and Payments
+
+Status: implemented in Phase 9 with server-calculated quotation snapshots, locked balances, partial/full collection, immutable payment history, manager-approved whole-payment refunds, audit/notification, and guarded delivery readiness.
 
 Controller/service/repository: `paymentController`, `paymentService`, `paymentRepository` including invoice operations. Tables: `invoices`, `payments`, `repair_tickets`, `ticket_status_history`, `audit_logs`.
 
@@ -198,11 +204,27 @@ Controller/service/repository: `paymentController`, `paymentService`, `paymentRe
 | `POST /repair-tickets/:ticketId/invoices` | CASHIER | Yes | 9 |
 | `GET /invoices/:id/payments` | CASHIER, MANAGER, owning CUSTOMER | No | 9 |
 | `POST /invoices/:id/payments` | CASHIER | Yes | 9 |
+| `GET /payments/refund-approvers` | CASHIER | No | 9 |
 | `POST /payments/:id/refund` | CASHIER with MANAGER approval | Yes | 9 |
 
-Rules: one invoice per completed ticket; server totals; lock invoice; no overpayment; completed payments immutable; refunds bounded by completed paid amount and audited.
+Rules: one invoice per locked `COMPLETED` ticket; accepted-quotation totals only; payment precision and balance checked in cents under ticket/invoice locks; no overpayment; completed payment fields remain immutable; whole-payment refund requires a distinct active manager and reason; full payment sets `READY_FOR_DELIVERY`, while a pre-delivery refund restores `COMPLETED`; all financial/status/history/notification/audit writes are atomic.
+
+## Notifications
+
+Status: implemented in Phase 10. All reads and mutations are scoped by the authenticated recipient ID.
+
+| Method and path | Roles | Transaction | Phase |
+|---|---|---|---|
+| `GET /notifications` | Authenticated recipient | No | 10 |
+| `GET /notifications/unread-count` | Authenticated recipient | No | 10 |
+| `PATCH /notifications/:id/read` | Owning recipient | No | 10 |
+| `POST /notifications/read-all` | Authenticated recipient | No | 10 |
+
+Rules: pagination is bounded; optional read-state filter is validated; cross-recipient IDs return not found; marking read is idempotent; content must not contain secrets or internal-only notes.
 
 ## Delivery
+
+Status: implemented in Phase 10 with locked single handover, proof metadata, payment enforcement, audited Manager exceptions, customer notification, and final closure.
 
 Controller/service/repository: `deliveryController`, `deliveryService`, `deliveryRepository`. Tables: `deliveries`, `repair_tickets`, `invoices`, `ticket_status_history`, `ticket_attachments`, `audit_logs`.
 
@@ -210,22 +232,27 @@ Controller/service/repository: `deliveryController`, `deliveryService`, `deliver
 |---|---|---|---|
 | `POST /repair-tickets/:ticketId/deliver` | RECEPTIONIST; MANAGER exception | Yes | 10 |
 | `GET /repair-tickets/:ticketId/delivery` | Owning CUSTOMER, RECEPTIONIST, MANAGER | No | 10 |
+| `POST /repair-tickets/:ticketId/close` | RECEPTIONIST, MANAGER | Yes | 10 |
 
-Rules: ticket ready, normally fully paid, not previously delivered; actor/recipient/time required; validated proof URL; manager exception explicit and audited.
+Rules: ticket ready, normally fully paid, not previously delivered; actor/recipient/time required; validated proof URL; manager exception explicit and audited; closure requires both `DELIVERED` state and the persisted delivery record.
 
 ## Reviews
+
+Status: implemented in Phase 10 with owner/state/uniqueness enforcement and audited writes.
 
 Controller/service/repository: `reviewController`, `reviewService`, `reviewRepository`. Tables: `reviews`, `repair_tickets`, `users`.
 
 | Method and path | Roles | Transaction | Phase |
 |---|---|---|---|
-| `POST /repair-tickets/:ticketId/review` | Owning CUSTOMER | No | 10 |
+| `POST /repair-tickets/:ticketId/review` | Owning CUSTOMER | Yes | 10 |
 | `GET /repair-tickets/:ticketId/review` | Owner, authorized staff | No | 10 |
-| `PATCH /reviews/:id` | Owning CUSTOMER within policy | No | 10 |
+| `PATCH /reviews/:id` | Owning CUSTOMER within 7 days | Yes | 10 |
 
 Rules: ticket delivered/closed; exactly one review; ratings 1–5; cross-owner access forbidden.
 
 ## Reports
+
+Status: implemented in Phase 10 with bounded UTC ranges and role-specific read-only aggregates.
 
 Controller/service/repository: `reportController`, `reportService`, `reportRepository`. Tables vary by report and are read-only.
 

@@ -50,6 +50,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   }, [clearSession]);
 
-  const value = useMemo(() => ({ status, user, login, logout }), [login, logout, status, user]);
+  const updateCurrentUser = useCallback((updatedUser: SafeUser) => {
+    setUser(updatedUser);
+  }, []);
+
+  const value = useMemo(
+    () => ({ status, user, login, logout, updateCurrentUser }),
+    [login, logout, status, updateCurrentUser, user],
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

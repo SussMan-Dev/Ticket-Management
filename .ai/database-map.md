@@ -17,9 +17,10 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Purpose: customer and staff accounts.
 - Primary key: `id`.
 - Foreign keys: `role_id → roles.id`.
-- Important columns: `email`, `phone`, `password_hash`, `status`, `failed_login_attempts`, `locked_until`, `deleted_at`.
+- Important columns: `email`, `phone`, `password_hash`, `avatar_url`, `status`, `failed_login_attempts`, `locked_until`, `deleted_at`.
 - Important indexes: unique email/phone; `(role_id, status)`, `locked_until`, `deleted_at`.
 - Owned by: Users.
+- Implementation: `avatar_url` may reference a validated random-name image served from the configured local upload directory; image bytes are not stored in MySQL.
 - Read full schema when: authentication, profile, status, role, or soft-delete logic changes.
 
 ## auth_sessions
@@ -214,6 +215,7 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Important columns: action, result, start/finish timestamps.
 - Important indexes: ticket.
 - Owned by: Repair Actions.
+- Implementation: Phase 8 permits active-assigned-author edits only until `finished_at` is set. Ticket row locking serializes log/part-attribution writes.
 - Read full schema when: work logging or progress timing changes.
 
 ## repair_log_parts
@@ -224,6 +226,7 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Important columns: quantity.
 - Important indexes: unique `(repair_log_id, part_id)`.
 - Owned by: Repair Actions/Inventory.
+- Implementation: Phase 8 treats rows as attribution of already-fulfilled stock; cumulative ticket/part usage is bounded by fulfilled request quantities and does not create another inventory movement.
 - Read full schema when: consumed-part attribution changes.
 
 ## test_results
@@ -234,6 +237,7 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Important columns: test name, result, note, tested time.
 - Important indexes: ticket.
 - Owned by: Repair Actions.
+- Implementation: Phase 8 appends immutable PASS/FAIL evidence. The newest result for each normalized test name gates atomic `TESTING` completion or repair return.
 - Read full schema when: test requirements or completion changes.
 
 ## invoices
@@ -244,6 +248,7 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Important columns: unique invoice code, amount components, paid amount, payment status.
 - Important indexes: unique ticket/code; payment status.
 - Owned by: Payments.
+- Implementation: Phase 9 snapshots accepted-quotation amounts into one invoice per locked completed ticket, maintains `paid_amount` and `payment_status` atomically, and uses no schema migration.
 - Read full schema when: totals, balance, status, or invoice creation changes.
 
 ## payments
@@ -254,6 +259,7 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Important columns: unique payment code, positive amount, method, status, external reference, paid time.
 - Important indexes: invoice and paid time.
 - Owned by: Payments.
+- Implementation: Phase 9 appends positive completed payments and never edits their financial fields. Controlled whole-payment refund changes only status to `REFUNDED`, subtracts the locked invoice balance, and preserves approval/reason evidence in `audit_logs`.
 - Read full schema when: payment, refund, reconciliation, or method changes.
 
 ## deliveries

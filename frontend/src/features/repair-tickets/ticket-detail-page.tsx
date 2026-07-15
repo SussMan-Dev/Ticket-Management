@@ -11,30 +11,34 @@ import { StatusBadge } from "../../components/ui/status-badge";
 import { useAuth } from "../../lib/auth/use-auth";
 import { formatDateTime } from "../../lib/formatting/formatters";
 import type { RepairTicket, TicketAttachmentType, UserRole } from "../../types/domain";
-import { useAssignTicket, useReassignTicket } from "../assignments/assignments.api";
+import { useAssignableTechnicians, useAssignTicket, useReassignTicket } from "../assignments/assignments.api";
 import { DiagnosisPanel } from "../diagnoses/diagnosis-panel";
 import { useDiagnoses } from "../diagnoses/diagnoses.api";
+import { DeliveryPanel } from "../deliveries/delivery-panel";
 import { PartRequestPanel } from "../inventory/part-request-panel";
 import { QuotationPanel } from "../quotations/quotation-panel";
-import { useCancelTicket, useChangeTicketStatus, useCreateAttachment, useReceiveTicket, useTicket, useTicketAttachments, useTicketHistory } from "./tickets.api";
+import { RepairActionPanel } from "../repair-actions/repair-action-panel";
+import { useTicketTimeline } from "../repair-actions/repair-actions.api";
+import { ReviewPanel } from "../reviews/review-panel";
+import { useCancelTicket, useChangeTicketStatus, useCreateAttachment, useReceiveTicket, useTicket, useTicketAttachments } from "./tickets.api";
 import { ticketActionFlags } from "./ticket-action.rules";
 
 export function TicketDetailPage() {
   const id = Number(useParams().ticketId);
   const ticket = useTicket(id);
-  const history = useTicketHistory(id);
+  const timeline = useTicketTimeline(id);
   const attachments = useTicketAttachments(id);
   const { user } = useAuth();
   if (ticket.isLoading) return <LoadingState />;
   if (ticket.isError || !ticket.data) return <ErrorState error={ticket.error} retry={() => void ticket.refetch()} />;
   const data = ticket.data;
-  return <><PageHeader eyebrow={data.ticketCode} title={data.title} description={`${data.device.category} · ${data.device.brand ?? "Không rõ hãng"} ${data.device.model ?? ""}`} actions={<div className="button-row"><StatusBadge value={data.priority} /><StatusBadge value={data.status} /></div>} /><div className="ticket-detail-layout"><div className="ticket-detail-main"><Card><div className="section-heading"><h2>Thông tin tiếp nhận</h2><span>Cập nhật {formatDateTime(data.updatedAt)}</span></div><dl className="detail-list detail-list--two"><div><dt>Khách hàng</dt><dd>{data.customer.fullName}</dd></div><div><dt>Thiết bị</dt><dd>{data.device.brand ?? ""} {data.device.model ?? data.device.category}</dd></div><div><dt>Serial</dt><dd>{data.device.serialNumber ?? "—"}</dd></div><div><dt>Người tạo</dt><dd>{data.createdBy.fullName}</dd></div><div className="span-two"><dt>Vấn đề mô tả</dt><dd>{data.customerIssue}</dd></div><div><dt>Tình trạng ban đầu</dt><dd>{data.initialCondition ?? "—"}</dd></div><div><dt>Phụ kiện nhận kèm</dt><dd>{data.accessoriesReceived ?? "—"}</dd></div><div><dt>Dự kiến chẩn đoán</dt><dd>{formatDateTime(data.expectedDiagnosisAt)}</dd></div><div><dt>Dự kiến hoàn thành</dt><dd>{formatDateTime(data.expectedCompletionAt)}</dd></div></dl></Card>{user && ["CUSTOMER", "TECHNICIAN", "MANAGER"].includes(user.role) ? <TechnicalSections ticket={data} role={user.role} /> : null}<Card><AttachmentSection ticket={data} attachments={attachments.data ?? []} loading={attachments.isLoading} error={attachments.error} /></Card></div><aside className="ticket-detail-side"><TicketActions ticket={data} /><Card><h2>Lịch sử trạng thái</h2>{history.isLoading ? <LoadingState rows={3} /> : history.isError ? <ErrorState error={history.error} retry={() => void history.refetch()} /> : <ol className="timeline">{history.data?.map((item) => <li key={item.id}><i aria-hidden="true" /><div><StatusBadge value={item.toStatus} /><strong>{item.changedBy.fullName}</strong><small>{formatDateTime(item.createdAt)}</small>{item.reason ? <p>{item.reason}</p> : null}</div></li>)}</ol>}</Card></aside></div></>;
+  return <><PageHeader eyebrow={data.ticketCode} title={data.title} description={`${data.device.category} · ${data.device.brand ?? "Không rõ hãng"} ${data.device.model ?? ""}`} actions={<div className="button-row"><StatusBadge value={data.priority} /><StatusBadge value={data.status} /></div>} /><div className="ticket-detail-layout"><div className="ticket-detail-main"><Card><div className="section-heading"><h2>Thông tin tiếp nhận</h2><span>Cập nhật {formatDateTime(data.updatedAt)}</span></div><dl className="detail-list detail-list--two"><div><dt>Khách hàng</dt><dd>{data.customer.fullName}</dd></div><div><dt>Thiết bị</dt><dd>{data.device.brand ?? ""} {data.device.model ?? data.device.category}</dd></div><div><dt>Serial</dt><dd>{data.device.serialNumber ?? "—"}</dd></div><div><dt>Người tạo</dt><dd>{data.createdBy.fullName}</dd></div><div className="span-two"><dt>Vấn đề mô tả</dt><dd>{data.customerIssue}</dd></div><div><dt>Tình trạng ban đầu</dt><dd>{data.initialCondition ?? "—"}</dd></div><div><dt>Phụ kiện nhận kèm</dt><dd>{data.accessoriesReceived ?? "—"}</dd></div><div><dt>Dự kiến chẩn đoán</dt><dd>{formatDateTime(data.expectedDiagnosisAt)}</dd></div><div><dt>Dự kiến hoàn thành</dt><dd>{formatDateTime(data.expectedCompletionAt)}</dd></div></dl></Card>{user && ["CUSTOMER", "TECHNICIAN", "MANAGER"].includes(user.role) ? <TechnicalSections ticket={data} role={user.role} /> : null}{user && ["CUSTOMER", "RECEPTIONIST", "MANAGER"].includes(user.role) ? <Card><DeliveryPanel ticket={data} role={user.role} /></Card> : null}{user ? <Card><ReviewPanel ticket={data} role={user.role} /></Card> : null}<Card><AttachmentSection ticket={data} attachments={attachments.data ?? []} loading={attachments.isLoading} error={attachments.error} /></Card></div><aside className="ticket-detail-side"><TicketActions ticket={data} /><Card><h2>Timeline xử lý</h2>{timeline.isLoading ? <LoadingState rows={3} /> : timeline.isError ? <ErrorState error={timeline.error} retry={() => void timeline.refetch()} /> : <ol className="timeline">{timeline.data?.map((item) => <li key={item.key}><i aria-hidden="true" /><div><strong>{item.title}</strong>{item.actor ? <span>{item.actor.fullName}</span> : null}<small>{formatDateTime(item.occurredAt)}</small>{item.description ? <p>{item.description}</p> : null}</div></li>)}</ol>}</Card></aside></div></>;
 }
 
 function TechnicalSections({ ticket, role }: { ticket: RepairTicket; role: UserRole }) {
   const diagnoses = useDiagnoses(ticket.id);
   const approved = diagnoses.data?.find((diagnosis) => diagnosis.status === "APPROVED");
-  return <><Card><DiagnosisPanel ticket={ticket} /></Card>{["CUSTOMER", "TECHNICIAN", "MANAGER"].includes(role) ? <Card><QuotationPanel ticket={ticket} approvedDiagnosis={approved} /></Card> : null}{["TECHNICIAN", "MANAGER"].includes(role) ? <Card><PartRequestPanel ticket={ticket} /></Card> : null}</>;
+  return <><Card><DiagnosisPanel ticket={ticket} /></Card>{["CUSTOMER", "TECHNICIAN", "MANAGER"].includes(role) ? <Card><QuotationPanel ticket={ticket} approvedDiagnosis={approved} /></Card> : null}{["TECHNICIAN", "MANAGER"].includes(role) ? <Card><PartRequestPanel ticket={ticket} /></Card> : null}<Card><RepairActionPanel ticket={ticket} /></Card></>;
 }
 
 function TicketActions({ ticket }: { ticket: RepairTicket }) {
@@ -52,13 +56,14 @@ function TicketActions({ ticket }: { ticket: RepairTicket }) {
 function AssignmentAction({ ticket }: { ticket: RepairTicket }) {
   const assign = useAssignTicket(ticket.id);
   const reassign = useReassignTicket(ticket.id);
+  const technicians = useAssignableTechnicians();
   const isReassign = ticket.status === "ASSIGNED";
   const { register, handleSubmit, formState: { errors } } = useForm<{ technicianId: number; note: string }>({ defaultValues: { technicianId: 0, note: "" } });
   const submit = handleSubmit(async (values) => {
     if (isReassign) await reassign.mutateAsync({ technicianId: values.technicianId, note: values.note });
     else await assign.mutateAsync({ technicianId: values.technicianId, note: values.note || null });
   });
-  return <div className="assignment-box"><div className="alert alert--info">Backend chưa có endpoint tra cứu kỹ thuật viên dành cho Manager. Nhập ID kỹ thuật viên đã xác minh.</div><form onSubmit={(event) => void submit(event)}><FormField label="Technician ID" htmlFor="technician-id" required error={errors.technicianId?.message}><input id="technician-id" type="number" min={1} {...register("technicianId", { valueAsNumber: true, min: { value: 1, message: "ID phải lớn hơn 0" }, required: "Bắt buộc" })} /></FormField><FormField label="Ghi chú phân công" htmlFor="assignment-note" required={isReassign} error={errors.note?.message}><textarea id="assignment-note" rows={2} {...register("note", isReassign ? { required: "Bắt buộc khi phân công lại", minLength: { value: 3, message: "Tối thiểu 3 ký tự" } } : {})} /></FormField><Button className="button--full" type="submit" loading={assign.isPending || reassign.isPending}>{isReassign ? "Phân công lại" : "Phân công kỹ thuật viên"}</Button><MutationError error={assign.error ?? reassign.error} /></form></div>;
+  return <div className="assignment-box"><form onSubmit={(event) => void submit(event)}><FormField label="Kỹ thuật viên khả dụng" htmlFor="technician-id" required error={errors.technicianId?.message ?? (technicians.isError ? "Không thể tải danh sách kỹ thuật viên" : undefined)}><select id="technician-id" defaultValue="" {...register("technicianId", { valueAsNumber: true, min: { value: 1, message: "Hãy chọn kỹ thuật viên" }, required: "Bắt buộc" })}><option value="" disabled>{technicians.isLoading ? "Đang tải…" : "Chọn kỹ thuật viên"}</option>{technicians.data?.map((technician) => <option key={technician.id} value={technician.id}>{technician.fullName} · {technician.email}</option>)}</select></FormField><FormField label="Ghi chú phân công" htmlFor="assignment-note" required={isReassign} error={errors.note?.message}><textarea id="assignment-note" rows={2} {...register("note", isReassign ? { required: "Bắt buộc khi phân công lại", minLength: { value: 3, message: "Tối thiểu 3 ký tự" } } : {})} /></FormField><Button className="button--full" type="submit" disabled={technicians.isLoading || !technicians.data?.length} loading={assign.isPending || reassign.isPending}>{isReassign ? "Phân công lại" : "Phân công kỹ thuật viên"}</Button><MutationError error={assign.error ?? reassign.error ?? technicians.error} /></form></div>;
 }
 
 const attachmentTypesByRole: Partial<Record<UserRole, TicketAttachmentType[]>> = {

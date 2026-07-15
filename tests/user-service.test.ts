@@ -1,6 +1,7 @@
 import type { PoolConnection } from "mysql2/promise";
 import { describe, expect, it, vi } from "vitest";
 import type { AuditLogRepository } from "../src/common/repositories/audit-log.repository.js";
+import type { ImageStorage } from "../src/common/services/image-storage.service.js";
 import type { AuthRepository } from "../src/modules/auth/auth.repository.js";
 import type { UserRow } from "../src/modules/users/user.model.js";
 import type { UserRepository } from "../src/modules/users/user.repository.js";
@@ -49,6 +50,7 @@ function dependencies() {
   };
   const sessions = { revokeAllSessions: vi.fn() };
   const auditLogs = { create: vi.fn() };
+  const images = { storeAvatar: vi.fn(), deleteByUrl: vi.fn() };
   const transaction = vi.fn(async <T>(callback: (value: PoolConnection) => Promise<T>) =>
     callback(connection),
   );
@@ -59,9 +61,10 @@ function dependencies() {
     transaction as unknown as <T>(
       callback: (value: PoolConnection) => Promise<T>,
     ) => Promise<T>,
+    images as unknown as ImageStorage,
   );
 
-  return { service, repository, sessions, auditLogs, transaction };
+  return { service, repository, sessions, auditLogs, images, transaction };
 }
 
 describe("UserService", () => {
@@ -94,6 +97,48 @@ describe("UserService", () => {
     await expect(
       deps.service.update(customer, 3, { fullName: "Other User" }, metadata),
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("stores a validated self avatar, audits it, and removes the previous managed image", async () => {
+    const deps = dependencies();
+    const customer = { ...admin, id: 2, role: "CUSTOMER" as const };
+    const previousUrl = "http://localhost:3000/uploads/avatars/user-2-old.png";
+    const nextUrl = "http://localhost:3000/uploads/avatars/user-2-next.png";
+    deps.images.storeAvatar.mockResolvedValue({ url: nextUrl });
+    deps.repository.findById
+      .mockResolvedValueOnce(row({ avatar_url: previousUrl }))
+      .mockResolvedValueOnce(row({ avatar_url: nextUrl }));
+
+    await expect(
+      deps.service.updateAvatar(
+        customer,
+        2,
+        Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+        "image/png",
+        metadata,
+      ),
+    ).resolves.toMatchObject({ avatarUrl: nextUrl });
+
+    expect(deps.repository.updateProfile).toHaveBeenCalledWith(
+      connection,
+      2,
+      { avatarUrl: nextUrl },
+    );
+    expect(deps.auditLogs.create).toHaveBeenCalledWith(
+      connection,
+      expect.objectContaining({ action: "USER_AVATAR_UPDATED" }),
+    );
+    expect(deps.images.deleteByUrl).toHaveBeenCalledWith(previousUrl);
+  });
+
+  it("blocks cross-user avatar writes before storing a file", async () => {
+    const deps = dependencies();
+    const customer = { ...admin, id: 2, role: "CUSTOMER" as const };
+
+    await expect(
+      deps.service.updateAvatar(customer, 3, Buffer.from([1]), "image/png", metadata),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(deps.images.storeAvatar).not.toHaveBeenCalled();
   });
 
   it("creates staff with a hash and audit log", async () => {

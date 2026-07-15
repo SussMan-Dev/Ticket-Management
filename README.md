@@ -2,7 +2,7 @@
 
 Backend REST API for the lifecycle of a repair request: device intake, diagnosis, quotation, parts usage, repair, testing, payment, delivery, and customer review.
 
-The repository currently contains completed Phases 1–7: foundation, authentication/users, customers/devices, repair-ticket intake, assignment/diagnosis, versioned quotation/customer-response, and parts/inventory workflows.
+The repository contains the completed Phase 1–10 scope: foundation, authentication/users, customers/devices, repair-ticket intake, assignment/diagnosis, versioned quotation/customer-response, parts/inventory, repair/testing, invoice/payment, notifications, delivery/closure, reviews, and operational reports. The integrated React frontend is under `frontend/`.
 
 ## Technology
 
@@ -50,7 +50,7 @@ npm run seed:catalogs Seed active device category/brand defaults idempotently
 
 - `GET /api/v1/health` for process liveness.
 - `/api/v1/auth/*` for registration, login, refresh rotation, logout, logout-all, and current user.
-- `/api/v1/users/*` for administrator user management and safe self profile updates.
+- `/api/v1/users/*` for administrator user management, safe self profile updates, and validated local avatar uploads.
 - `/api/v1/customers/*` for owned customer profiles and receptionist/manager intake lookup.
 - `/api/v1/devices/*` for owned/staff-scoped device CRUD plus active category/brand catalogs.
 - `/api/v1/repair-tickets/*` for owned/assigned ticket retrieval, intake CRUD, receive/hold/cancel history, attachment metadata, manager assignment/reassignment, and ticket-scoped diagnoses.
@@ -58,9 +58,14 @@ npm run seed:catalogs Seed active device category/brand defaults idempotently
 - `/api/v1/quotations/*` for draft editing, manager approval/sending, expiry, and owner response; ticket-scoped quotation list/create lives under `/api/v1/repair-tickets/:ticketId/quotations`.
 - `/api/v1/parts/*` for role-safe catalog reads, inventory-staff maintenance, stock-in/adjustment, and immutable movement history.
 - `/api/v1/part-requests/*` for inventory decisions and partial fulfillment; assigned-technician creation lives under `/api/v1/repair-tickets/:ticketId/part-requests`.
+- `/api/v1/repair-logs/*` plus ticket-scoped repair-log, test-result, complete-testing, and aggregated timeline endpoints for Phase 8 technical work.
+- `/api/v1/invoices/*` and `/api/v1/payments/*` plus ticket-scoped invoice creation for Phase 9 server-calculated billing, partial payments, and approved refunds.
+- `/api/v1/notifications/*` for recipient-scoped list/count/read state.
+- Ticket-scoped delivery, closure, and review endpoints for Phase 10 handover and feedback.
+- `/api/v1/reports/*` for bounded Manager operational/revenue metrics and Manager/Inventory stock reports.
 
 Access tokens use Bearer authentication. Refresh tokens are scoped HttpOnly cookies and are never returned in JSON.
 
 ## Documentation
 
-Start with `AGENTS.md`, `.ai/project-context.md`, and `docs/architecture.md`. Module contracts are under `docs/modules/`; future implementation status is tracked in `.ai/module-status.md`.
+Start with `AGENTS.md`, `.ai/project-context.md`, and `docs/architecture.md`. Module contracts are under `docs/modules/`; current implementation status is tracked in `.ai/module-status.md`.

@@ -19,6 +19,7 @@ Base URL: `/api/v1`. JSON success responses contain `success`, `message`, `data`
 | GET | `/api/v1/users/:id` | ADMIN | Safe user detail |
 | POST | `/api/v1/users` | ADMIN | Create a staff account |
 | PATCH | `/api/v1/users/:id` | Self or ADMIN | Update safe profile fields |
+| POST | `/api/v1/users/:id/avatar` | Self or ADMIN | Upload a validated JPEG, PNG, or WebP avatar |
 | PATCH | `/api/v1/users/:id/status` | ADMIN | Change status and revoke sessions |
 | PATCH | `/api/v1/users/:id/role` | ADMIN | Change role and revoke sessions |
 | GET | `/api/v1/customers` | RECEPTIONIST, MANAGER | Paginated customer lookup |
@@ -53,14 +54,30 @@ Base URL: `/api/v1`. JSON success responses contain `success`, `message`, `data`
 | POST | `/api/v1/diagnoses/:id/request-revision` | MANAGER | Return diagnosis for revision |
 | POST | `/api/v1/diagnoses/:id/approve` | MANAGER | Approve submitted diagnosis |
 
-## Remaining endpoint groups
+Additional implemented Phase 6–10 groups:
 
-- Quotations: versioned quotation workflows and customer response.
-- Inventory and repair: parts, stock movement, part requests, repair logs, and test results.
-- Billing and delivery: invoices, partial payments, refunds, handover, and reviews.
-- Reports: dashboard, revenue, repair time, technician performance, parts usage, and low stock.
+- Ticket-scoped quotations plus quotation detail/edit/submit/approve/send and owner response.
+- Parts catalog, stock-in/adjustment ledger, movement history, and technician part requests with inventory fulfillment.
+- Ticket-scoped repair logs, test results, complete-testing, and aggregated timeline; unfinished log edits live under `/api/v1/repair-logs/:id`.
+- Invoice list/detail and ticket-scoped creation, invoice payment history/collection, active refund approver lookup, and manager-approved whole-payment refund.
 
-Phases 1 through 5 are mounted. `.ai/api-map.md` records exact role, transaction, request, and future-path details.
+Phase 9 billing endpoints:
+
+| Method | Path | Roles | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/invoices` | Own CUSTOMER, CASHIER, MANAGER | Paginated invoice list with search/status/customer/ticket filters |
+| GET | `/api/v1/invoices/:id` | Own CUSTOMER, CASHIER, MANAGER | Invoice totals, live balance, ticket, customer, and creator |
+| POST | `/api/v1/repair-tickets/:ticketId/invoices` | CASHIER | Create from the accepted quotation snapshot |
+| GET | `/api/v1/invoices/:id/payments` | Own CUSTOMER, CASHIER, MANAGER | Immutable payment history |
+| POST | `/api/v1/invoices/:id/payments` | CASHIER | Record a partial/full payment with `amount`, `method`, optional reference/note |
+| GET | `/api/v1/payments/refund-approvers` | CASHIER | Minimal active manager choices for approval |
+| POST | `/api/v1/payments/:id/refund` | CASHIER | Refund one whole payment with `managerApprovalId` and `reason` |
+
+Phase 10 adds authenticated notification list/count/read state; ticket-scoped handover, delivery view, closure, and review; review update; and seven `/reports/*` aggregates. Manager assignment also exposes `/repair-tickets/assignable-technicians` for safe UI selection.
+
+Phases 1 through 10 are mounted. `.ai/api-map.md` records exact roles, transactions, requests, and business rules.
+
+Avatar upload sends the image bytes directly as the request body with `Content-Type: image/jpeg`, `image/png`, or `image/webp`; it is not a JSON or multipart request. The default limit is 5 MB and is configurable with `IMAGE_UPLOAD_MAX_BYTES`.
 
 ## Authentication transport
 

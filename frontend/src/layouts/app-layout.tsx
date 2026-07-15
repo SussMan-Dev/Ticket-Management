@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
-import { getInitials } from "../lib/formatting/formatters";
+import { AppFooter } from "../components/ui/app-footer";
+import { UserAvatar } from "../components/ui/user-avatar";
 import { useAuth } from "../lib/auth/use-auth";
+import { NotificationBell } from "../features/notifications/notification-bell";
 import { navigationForRole } from "./role-navigation";
 
 const roleLabels: Record<string, string> = {
@@ -33,12 +35,19 @@ export function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="sidebar__footer"><div className="mini-profile"><span className="avatar">{getInitials(user.fullName)}</span><span><strong>{user.fullName}</strong><small>{roleLabels[user.role]}</small></span></div><Button variant="ghost" size="sm" onClick={() => void handleLogout()}>Đăng xuất</Button></div>
+        <div className="sidebar__footer"><div className="mini-profile"><UserAvatar fullName={user.fullName} src={user.avatarUrl} /><span><strong>{user.fullName}</strong><small>{roleLabels[user.role]}</small></span></div><Button variant="ghost" size="sm" onClick={() => void handleLogout()}>Đăng xuất</Button></div>
       </aside>
       {drawerOpen ? <button className="drawer-scrim" aria-label="Đóng menu" onClick={() => setDrawerOpen(false)} /> : null}
       <div className="app-content">
-        <header className="topbar"><button className="menu-button" aria-label="Mở menu" aria-expanded={drawerOpen} onClick={() => setDrawerOpen(true)}>☰</button><div className="topbar__context"><span className="status-dot" />Hệ thống vận hành</div><div className="topbar__user"><span>{user.fullName}</span><span className="avatar avatar--small">{getInitials(user.fullName)}</span></div></header>
+        <header className="topbar">
+          <div className="topbar__inner">
+            <button className="menu-button" aria-label="Mở menu" aria-expanded={drawerOpen} onClick={() => setDrawerOpen(true)}>☰</button>
+            <div className="topbar__context"><span className="status-dot" />Hệ thống vận hành</div>
+            <div className="topbar__user"><NotificationBell /><UserAvatar fullName={user.fullName} src={user.avatarUrl} size="small" /><span className="topbar__user-copy"><strong>{user.fullName}</strong><small>{roleLabels[user.role]}</small></span></div>
+          </div>
+        </header>
         <main id="main-content" className="main-content"><Outlet /></main>
+        <AppFooter />
       </div>
     </div>
   );

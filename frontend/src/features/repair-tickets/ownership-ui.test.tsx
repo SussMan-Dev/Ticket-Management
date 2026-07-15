@@ -14,7 +14,7 @@ describe("customer ownership UI", () => {
   it("không hiển thị customerId, priority hoặc SLA cho khách hàng", async () => {
     server.use(http.get("http://localhost:3000/api/v1/devices", () => HttpResponse.json({ success: true, message: "OK", data: [], meta: { page: 1, limit: 100, total: 0, totalPages: 0 } })));
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(<QueryClientProvider client={queryClient}><AuthContext.Provider value={{ status: "authenticated", user: customer, login: vi.fn(), logout: vi.fn() }}><MemoryRouter><TicketCreatePage /></MemoryRouter></AuthContext.Provider></QueryClientProvider>);
+    render(<QueryClientProvider client={queryClient}><AuthContext.Provider value={{ status: "authenticated", user: customer, login: vi.fn(), logout: vi.fn(), updateCurrentUser: vi.fn() }}><MemoryRouter><TicketCreatePage /></MemoryRouter></AuthContext.Provider></QueryClientProvider>);
     expect(screen.queryByLabelText("Khách hàng")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Mức ưu tiên")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Dự kiến chẩn đoán")).not.toBeInTheDocument();
