@@ -5,7 +5,6 @@ interface ImportMetaEnv {
   readonly VITE_API_PROXY_TARGET?: string;
   readonly VITE_CURRENCY?: string;
   readonly VITE_TIME_ZONE?: string;
-  readonly VITE_ENABLE_QUOTATION_MOCK?: string;
 }
 
 interface ImportMeta {

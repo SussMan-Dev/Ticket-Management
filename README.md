@@ -2,7 +2,7 @@
 
 Backend REST API for the lifecycle of a repair request: device intake, diagnosis, quotation, parts usage, repair, testing, payment, delivery, and customer review.
 
-The repository currently contains the completed **Phase 1 foundation**, **Phase 2 authentication/user management**, **Phase 3 customer/device management**, **Phase 4 repair-ticket intake/workflow foundation**, and **Phase 5 assignment/diagnosis workflow**.
+The repository currently contains completed Phases 1–6: foundation, authentication/users, customers/devices, repair-ticket intake, assignment/diagnosis, and versioned quotation/customer-response workflows.
 
 ## Technology
 
@@ -55,6 +55,7 @@ npm run seed:catalogs Seed active device category/brand defaults idempotently
 - `/api/v1/devices/*` for owned/staff-scoped device CRUD plus active category/brand catalogs.
 - `/api/v1/repair-tickets/*` for owned/assigned ticket retrieval, intake CRUD, receive/hold/cancel history, attachment metadata, manager assignment/reassignment, and ticket-scoped diagnoses.
 - `/api/v1/diagnoses/*` for active-assignee editing/submission and manager revision/approval.
+- `/api/v1/quotations/*` for draft editing, manager approval/sending, expiry, and owner response; ticket-scoped quotation list/create lives under `/api/v1/repair-tickets/:ticketId/quotations`.
 
 Access tokens use Bearer authentication. Refresh tokens are scoped HttpOnly cookies and are never returned in JSON.
 

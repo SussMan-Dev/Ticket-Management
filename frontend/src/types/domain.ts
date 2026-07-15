@@ -197,28 +197,35 @@ export type QuotationStatus = (typeof QUOTATION_STATUSES)[number];
 
 export interface QuotationItem {
   id: number;
-  itemType: string;
+  itemType: "LABOR" | "PART" | "OTHER";
+  partId: number | null;
   description: string;
   quantity: number;
   unitPrice: number;
   lineTotal: number;
+  createdAt: string;
 }
 
 export interface Quotation {
   id: number;
   ticketId: number;
+  diagnosisId: number;
   version: number;
   status: QuotationStatus;
   items: QuotationItem[];
   laborAmount: number;
   partsAmount: number;
+  otherAmount: number;
   taxAmount: number;
   discountAmount: number;
   totalAmount: number;
   expiresAt: string | null;
+  createdBy: { id: number; fullName: string };
+  approvedBy: { id: number; fullName: string } | null;
+  approvedAt: string | null;
   sentAt: string | null;
-  respondedAt: string | null;
+  customerRespondedAt: string | null;
+  customerResponseNote: string | null;
   createdAt: string;
   updatedAt: string;
-  source: "mock" | "api";
 }

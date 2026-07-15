@@ -130,21 +130,23 @@ Rules: active assigned author; one open diagnosis per ticket; state-bound editin
 
 ## Quotations
 
+Status: implemented in Phase 6 with approved-diagnosis snapshots, server-owned catalog pricing/totals, version supersession, expiry, ownership/assignment scoping, notifications, audit, and atomic ticket history.
+
 Controller/service/repository: `quotationController`, `quotationService`, `quotationRepository`. Tables: `quotations`, `quotation_items`, `diagnoses`, `parts`, `repair_tickets`, `ticket_status_history`.
 
 | Method and path | Roles | Transaction | Phase |
 |---|---|---|---|
-| `GET /repair-tickets/:ticketId/quotations` | Owner, MANAGER, authorized operational roles | No | 6 |
-| `GET /quotations/:id` | Owner, MANAGER, authorized operational roles | No | 6 |
+| `GET /repair-tickets/:ticketId/quotations` | Owner, assigned TECHNICIAN, MANAGER | No | 6 |
+| `GET /quotations/:id` | Owner, assigned TECHNICIAN, MANAGER | No | 6 |
 | `POST /repair-tickets/:ticketId/quotations` | MANAGER | Yes | 6 |
 | `PATCH /quotations/:id` | MANAGER, draft only | Yes for item replacement | 6 |
-| `POST /quotations/:id/submit` | Authorized preparer/MANAGER | Yes | 6 |
+| `POST /quotations/:id/submit` | MANAGER | Yes | 6 |
 | `POST /quotations/:id/approve` | MANAGER | Yes | 6 |
 | `POST /quotations/:id/send` | MANAGER | Yes | 6 |
 | `POST /quotations/:id/accept` | Owning CUSTOMER | Yes | 6 |
 | `POST /quotations/:id/reject` | Owning CUSTOMER | Yes | 6 |
 
-Rules: approved diagnosis; server totals; price snapshots; unique version; supersede prior current quote; owner response only while sent and unexpired; transition ticket atomically.
+Rules: approved diagnosis; server-generated initial items; catalog-owned PART prices; server totals; unique version; supersede prior open quote; future expiry before sending; owner response only while sent and unexpired; transition ticket/history atomically. Accepted quotes move to parts waiting when they contain part lines, otherwise repair; rejected quotes move to customer rejected; materialized expiry returns to quotation waiting.
 
 ## Parts and Inventory
 

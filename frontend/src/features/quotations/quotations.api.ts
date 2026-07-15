@@ -1,13 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../lib/api/query-keys";
 import type { QuotationStatus } from "../../types/domain";
-import { quotationGateway, type MockDraftInput } from "./quotation.gateway";
+import {
+  quotationGateway,
+  type CreateQuotationInput,
+  type UpdateQuotationInput,
+} from "./quotation.gateway";
 
 export function useQuotations(ticketId: number) {
   return useQuery({
     queryKey: queryKeys.quotations(ticketId),
     queryFn: () => quotationGateway.list(ticketId),
-    enabled: import.meta.env.VITE_ENABLE_QUOTATION_MOCK !== "false" && ticketId > 0,
+    enabled: Number.isInteger(ticketId) && ticketId > 0,
   });
 }
 
@@ -15,7 +19,7 @@ export function useQuotation(id: number) {
   return useQuery({
     queryKey: queryKeys.quotation(id),
     queryFn: () => quotationGateway.get(id),
-    enabled: import.meta.env.VITE_ENABLE_QUOTATION_MOCK !== "false" && id > 0,
+    enabled: Number.isInteger(id) && id > 0,
   });
 }
 
@@ -33,26 +37,29 @@ function useQuotationMutation(ticketId: number) {
   };
 }
 
-export function useCreateMockQuotation(ticketId: number) {
+export function useCreateQuotation(ticketId: number) {
   const invalidate = useQuotationMutation(ticketId);
   return useMutation({
-    mutationFn: (input: Omit<MockDraftInput, "ticketId">) => quotationGateway.createDraft({ ...input, ticketId }),
+    mutationFn: (input: Omit<CreateQuotationInput, "ticketId">) =>
+      quotationGateway.createDraft({ ...input, ticketId }),
     onSuccess: async (quotation) => invalidate(quotation.id),
   });
 }
 
-export function useUpdateMockQuotation(ticketId: number, quotationId: number) {
+export function useUpdateQuotation(ticketId: number, quotationId: number) {
   const invalidate = useQuotationMutation(ticketId);
   return useMutation({
-    mutationFn: (input: Omit<MockDraftInput, "ticketId">) => quotationGateway.updateDraft(quotationId, { ...input, ticketId }),
+    mutationFn: (input: UpdateQuotationInput) =>
+      quotationGateway.updateDraft(quotationId, input),
     onSuccess: async () => invalidate(quotationId),
   });
 }
 
-export function useTransitionMockQuotation(ticketId: number, quotationId: number) {
+export function useTransitionQuotation(ticketId: number, quotationId: number) {
   const invalidate = useQuotationMutation(ticketId);
   return useMutation({
-    mutationFn: (status: QuotationStatus) => quotationGateway.transition(quotationId, status),
+    mutationFn: (status: QuotationStatus) =>
+      quotationGateway.transition(quotationId, status),
     onSuccess: async () => invalidate(quotationId),
   });
 }

@@ -31,7 +31,6 @@ The Vite development server runs at `http://localhost:5173` and proxies `/api` t
 | `VITE_API_PROXY_TARGET` | `http://localhost:3000` | Development proxy target |
 | `VITE_CURRENCY` | `VND` | ISO 4217 display currency; no currency is assumed in code |
 | `VITE_TIME_ZONE` | `Asia/Bangkok` | IANA display time zone; API values remain UTC strings |
-| `VITE_ENABLE_QUOTATION_MOCK` | `true` | Enables the isolated Phase 6 in-memory adapter |
 
 Do not put secrets in Vite environment variables: every `VITE_*` value is public in the browser bundle.
 
@@ -55,7 +54,7 @@ npm run build
 | `/customers`, `/customers/:id` | RECEPTIONIST, MANAGER | Customer lookup/intake |
 | `/devices` | CUSTOMER, RECEPTIONIST, MANAGER | Scoped device create/list/soft-delete |
 | `/tickets`, `/tickets/new`, `/tickets/:id` | Operational roles per backend | Ticket intake, detail, status history, attachments and workflow actions |
-| `/tickets/:ticketId/quotations/:quotationId` | CUSTOMER, TECHNICIAN, MANAGER | Phase 6 mock quotation detail and state UI |
+| `/tickets/:ticketId/quotations/:quotationId` | CUSTOMER, assigned TECHNICIAN, MANAGER | Phase 6 quotation detail and role/state actions backed by the API |
 | `/extension` | INVENTORY_STAFF, CASHIER | Explicit placeholder; no unsupported operational UI |
 
 Admin navigation intentionally excludes repair operations. Customer forms do not expose `customerId`, priority, or SLA dates. Technician and customer data remain scoped by backend ownership/active assignment checks; role-aware menus are UX only.
@@ -69,7 +68,7 @@ Admin navigation intentionally excludes repair operations. Customer forms do not
 - A failed refresh clears the in-memory session and TanStack Query cache.
 - 401, 403, 404, 409, and 422 envelopes are preserved as typed `ApiError` values. Conflicts and validation errors receive explicit UI guidance.
 
-## Integrated backend APIs (Phases 1–5)
+## Integrated backend APIs (Phases 1–6)
 
 - Auth: register, login, refresh, logout, current user
 - Users: list/create/update, status and role
@@ -78,18 +77,17 @@ Admin navigation intentionally excludes repair operations. Customer forms do not
 - Repair tickets: list/detail/create, receive, configured hold/resume, cancel, history and attachment metadata
 - Assignments: assign/reassign
 - Diagnoses: list/create/update/submit/revision/approve
+- Quotations: list/detail/create/update/submit/approve/send/accept/reject
 
 All UI calls go through typed feature API functions and centralized query keys. Components do not call `fetch` directly.
 
-## Phase 6 quotation boundary
+## Phase 6 quotation integration
 
-The repository does not currently contain `src/modules/quotations/`, and the backend docs mark Phase 6 as planned. Therefore:
-
-- No quotation REST endpoint or request DTO is invented.
-- `quotation.gateway.ts` binds quotation pages to an in-memory mock adapter.
-- Every mock screen is visibly labeled, data disappears on reload, and `source: "mock"` is explicit.
-- Draft edit, supersession, status action visibility, confirmation dialogs, expiry/read-only behavior, and related query invalidation are ready for UI verification.
-- Mock totals are never described as authoritative. When Phase 6 exists, replace the gateway with functions derived from its actual schema/DTO and render server-calculated totals.
+- `quotation.gateway.ts` binds the pages to the implemented Phase 6 REST endpoints.
+- Creating a draft sends only the expiry; the backend generates initial items from the approved diagnosis.
+- Draft PART edits send only `partId` and quantity. Catalog descriptions, prices, line totals, and header totals remain server-authoritative.
+- Role/status actions map to submit, approve, send, accept, and reject endpoints; successful mutations invalidate quotation, ticket, and status-history queries.
+- Expired and superseded versions render read-only. The backend remains authoritative if browser time or cached ticket state is stale.
 
 ## Known backend contract gaps
 
@@ -99,4 +97,4 @@ The repository does not currently contain `src/modules/quotations/`, and the bac
 
 ## Test coverage
 
-The suite covers login/logout transport, single-flight refresh and one-time retry, error envelopes, protected/role routes, role navigation, customer ownership UI, assignment and diagnosis state rules, quotation role/status/expiry rules, DRAFT editing, supersession, query invalidation, and 409/422 handling.
+The suite covers login/logout transport, single-flight refresh and one-time retry, error envelopes, protected/role routes, role navigation, customer ownership UI, assignment and diagnosis state rules, quotation role/status/expiry rules, real-gateway mutation invalidation, and 409/422 handling.

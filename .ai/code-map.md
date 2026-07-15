@@ -2,7 +2,7 @@
 
 ## Frontend Application
 
-Purpose: standalone browser UI for implemented Auth through Diagnosis workflows, plus an isolated Phase 6 quotation adapter boundary.
+Purpose: standalone browser UI for implemented Auth through Quotation workflows.
 
 Main files: `frontend/src/app/`, `frontend/src/features/`, `frontend/src/lib/api/`, `frontend/src/lib/auth/`, `frontend/src/layouts/`, `frontend/src/routes/`, and `frontend/src/components/ui/`.
 
@@ -10,7 +10,7 @@ Configuration and docs: `frontend/package.json`, `frontend/vite.config.ts`, `fro
 
 Read when: changing browser authentication, role navigation, feature pages, frontend API DTOs/hooks, forms, quotation adapter integration, responsive styling, or frontend tests.
 
-Important rules: access tokens stay in memory; refresh uses the HttpOnly cookie; UI role visibility never replaces backend authorization; components do not call `fetch`; Phase 6 remains mock-only until actual backend quotation DTOs exist.
+Important rules: access tokens stay in memory; refresh uses the HttpOnly cookie; UI role visibility never replaces backend authorization; components do not call `fetch`; quotation amounts render only server responses and PART edits never send a client price.
 
 ## Foundation
 
@@ -126,7 +126,7 @@ Important rules: active assigned author writes; one open diagnosis per ticket; a
 
 Purpose: versioned price snapshots, internal approval, sending, expiry, and customer response.
 
-Main files: `src/modules/quotations/quotation.route.ts`, `quotation.controller.ts`, `quotation.service.ts`, `quotation.repository.ts`, `quotation.model.ts`, `quotation.schema.ts`, `quotation.dto.ts` (planned Phase 6).
+Main files: `src/modules/quotations/quotation.route.ts`, `quotation.controller.ts`, `quotation.service.ts`, `quotation.repository.ts`, `quotation.model.ts`, `quotation.schema.ts`, `quotation.dto.ts` (implemented Phase 6).
 
 Tables: `quotations`, `quotation_items`.
 
@@ -134,7 +134,7 @@ Dependencies: diagnoses, repair tickets, parts, customers, notifications.
 
 Read when: quotation totals, versions, expiry, approval, or response changes.
 
-Important rules: server-calculated totals; snapshot unit prices; only approved/sent/unexpired quotation may be accepted by owner; supersede old active version.
+Important rules: approved-diagnosis snapshots; server-calculated totals; catalog-owned PART prices; only sent/unexpired quotation may receive an owner response; supersede open versions; expiry and responses own atomic ticket history.
 
 ## Parts and Inventory Modules
 

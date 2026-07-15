@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-Create versioned quotations, snapshot prices, manage approval/sending/expiry, and record the owning customer's response.
+Create versioned quotations from approved diagnoses, snapshot prices, manage manager approval/sending/expiry, and record the owning customer's response.
 
 ## Main entities
 
@@ -10,40 +10,49 @@ Quotation and quotation item.
 
 ## Main files
 
-Planned under `src/modules/quotations/` using the standard seven-file module structure.
+`src/modules/quotations/quotation.route.ts`, `quotation.controller.ts`, `quotation.service.ts`, `quotation.repository.ts`, `quotation.model.ts`, `quotation.schema.ts`, and `quotation.dto.ts`.
 
 ## Public APIs
 
-Ticket quotation list/create; quotation detail/update, submit, approve, send, accept, and reject. Planned for Phase 6.
+- `GET/POST /repair-tickets/:ticketId/quotations`
+- `GET/PATCH /quotations/:id`
+- `POST /quotations/:id/submit`
+- `POST /quotations/:id/approve`
+- `POST /quotations/:id/send`
+- `POST /quotations/:id/accept`
+- `POST /quotations/:id/reject`
 
 ## Allowed roles
 
-Managers create/approve/send; authorized staff may prepare drafts by policy; only the owning customer accepts/rejects; technicians have read-only context.
+Managers create, edit, submit, approve, and send. Active assigned technicians have read-only context. The owning customer reads only versions that have been sent and is the only actor that may accept or reject.
 
 ## Business rules
 
-Items snapshot descriptions and prices. Version is unique per ticket. Only one current quotation exists; replacement supersedes the prior one. Expired quotations cannot be accepted.
+- Creation requires a ticket in the quotation stage and its latest approved diagnosis.
+- Initial labor and part lines are generated from the approved diagnosis. Part descriptions and current `selling_price` values are read and snapshotted by the server.
+- Draft edits may set `LABOR`/`OTHER` descriptions and prices. A `PART` edit sends only active `partId` and quantity; description and price remain server-authoritative.
+- Line totals and quotation totals are calculated by the server. Tax and discount remain zero until a separate configured policy exists.
+- Version is unique per ticket. A replacement supersedes an existing draft, pending, or approved version.
+- Sending requires an approved quotation and a future expiry. A customer response requires the sent, unexpired quotation and ticket ownership.
+- Accepting a quotation with part lines moves the ticket to `WAITING_FOR_PARTS`; otherwise it moves to `REPAIRING`. Rejection moves it to `CUSTOMER_REJECTED`.
+- Expiry is surfaced on reads and materialized transactionally when a customer responds or a manager creates a replacement. Materialization returns the ticket to `WAITING_FOR_QUOTATION`.
 
 ## State transitions
 
-`DRAFT` → `PENDING_APPROVAL` → `APPROVED` → `SENT` → `ACCEPTED` or `REJECTED`; sent quotations may expire; replacement marks previous as `SUPERSEDED`.
+`DRAFT` → `PENDING_APPROVAL` → `APPROVED` → `SENT` → `ACCEPTED` or `REJECTED`. A sent quotation may become `EXPIRED`; a replacement marks an earlier open version `SUPERSEDED`.
 
 ## Database tables
 
-`quotations`, `quotation_items`, `diagnoses`, `parts`, `repair_tickets`, and `ticket_status_history`.
+`quotations`, `quotation_items`, `diagnoses`, `parts`, `repair_tickets`, `ticket_status_history`, `notifications`, and `audit_logs`.
 
 ## Transactions
 
-Required for create plus items/version supersession, approval, send plus ticket status, and customer response plus ticket status.
-
-## Dependencies
-
-Diagnoses, repair tickets, inventory availability, notifications, and audit logs.
+Required for create plus snapshot items/version supersession, draft item replacement, submit/approval, send plus ticket status/history, expiry materialization, and customer response plus ticket status/history.
 
 ## Common errors
 
-Diagnosis not approved, invalid totals, stale version, quotation expired, wrong owner, and invalid status transition.
+Approved diagnosis missing, part unavailable, amount limit exceeded, invalid expiry, wrong owner, quotation expired, and invalid quotation/ticket state.
 
 ## Security considerations
 
-Recalculate totals server-side from validated items. Never trust client totals, prices outside authorized manager workflows, or customer IDs from the request.
+All inputs are validated. Client totals and catalog part prices are rejected, customer identity comes from the signed authenticated session, and services check ticket ownership or active assignment in addition to route roles.

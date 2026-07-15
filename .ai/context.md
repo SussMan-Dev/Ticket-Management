@@ -6,10 +6,10 @@ This file is the short entry point requested by IDE/agent workflows. Detailed, c
 
 - Project: Repair Ticket Management System using Node.js, Express, TypeScript, MySQL 8, `mysql2/promise`, and raw parameterized SQL.
 - Architecture: Route -> Middleware -> Controller -> Service -> Repository -> MySQL.
-- Completed: Phase 1 Foundation, Phase 2 Auth/Users, Phase 3 Customers/Devices, Phase 4 Repair Tickets, and Phase 5 Assignments/Diagnoses.
-- Verified: TypeScript typecheck, production build, 100 tests, repository SQL location, and rolled-back Phase 5 MySQL repository flow.
-- Frontend: standalone React app under `frontend/` integrates Phases 1–5; Phase 6 screens use an isolated mock gateway because backend quotation source is absent.
-- Next: Phase 6 versioned quotation workflow and customer response, followed by binding the frontend quotation gateway to its actual DTOs.
+- Completed: Phases 1–6, through versioned quotations and customer response.
+- Verified: backend TypeScript/build and 112 tests; frontend lint/build and 16 tests; Phase 6 repository SELECT/locking queries against MySQL.
+- Frontend: standalone React app under `frontend/` integrates Phases 1–6; quotation screens use the real typed API and server-calculated totals.
+- Next: Phase 7 parts catalog, stock ledger, and part-request fulfillment.
 
 ## Phase 5 capabilities
 
@@ -21,7 +21,7 @@ This file is the short entry point requested by IDE/agent workflows. Detailed, c
 
 ## Workflow boundary
 
-Phases 4 and 5 expose intake, assignment, and diagnosis transitions through their owning services. The generic manager endpoint remains restricted to `RECEIVED <-> ON_HOLD`. Quotation, inventory, repair/testing, payment, delivery, closure, and timeline transitions remain owned by later phases.
+Phases 4–6 expose intake, assignment, diagnosis, and quotation/customer-decision transitions through their owning services. The generic manager endpoint remains restricted to `RECEIVED <-> ON_HOLD`. Inventory, repair/testing, payment, delivery, closure, and timeline transitions remain owned by later phases.
 
 ## Canonical files
 

@@ -10,7 +10,7 @@
 | Repair Tickets | Completed | Yes | Completed | Phase 4 intake CRUD, ownership, history, attachments |
 | Assignments | Completed | Yes | Completed | Phase 5 atomic assignment/reassignment, notification, audit |
 | Diagnoses | Completed | Yes | Completed | Phase 5 active-author diagnosis/revision/approval workflow |
-| Quotations | Not started | No | Completed | Phase 6 |
+| Quotations | Completed | Yes | Completed | Phase 6 versioning, snapshots, approval/send, expiry, owner response |
 | Parts/Inventory | Not started | No | Completed | Phase 7 |
 | Repair Actions/Testing | Not started | No | Completed | Phase 8 |
 | Payments/Invoices | Not started | No | Completed | Phase 9 |

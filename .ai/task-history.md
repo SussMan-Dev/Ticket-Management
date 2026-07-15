@@ -1,5 +1,51 @@
 # Task History
 
+## 2026-07-15 — Phase 6 quotations and real frontend integration
+
+Completed:
+
+- Implemented the seven-file Quotations backend module with scoped list/detail, approved-diagnosis snapshot creation, DRAFT editing, submit/approve/send, expiry, and owner-only accept/reject flows.
+- Made catalog PART descriptions/prices and every line/header total server-authoritative; initial items come from the latest approved diagnosis.
+- Added ticket/current-quotation row locks, unique versions, supersession, atomic ticket history, durable notifications, and audit events.
+- Integrated acceptance into `WAITING_FOR_PARTS` or `REPAIRING`, rejection into `CUSTOMER_REJECTED`, and materialized expiry back into `WAITING_FOR_QUOTATION`.
+- Replaced the frontend mock gateway with typed REST calls and updated forms/detail/history to render server responses and never submit a PART price.
+- Added 12 backend quotation tests, updated frontend quotation tests, and synchronized module/API/workflow/database/frontend/AI documentation.
+
+Changed files:
+
+- Added `src/modules/quotations/*`, `tests/quotation-service.test.ts`, and `tests/quotation-api.test.ts`.
+- Mounted quotation routes and extended the ticket transition map for expiry.
+- Updated quotation feature files under `frontend/src/features/quotations/` and their shared domain types/tests.
+- Updated affected README, business/module documentation, and `.ai` maps/status/task files.
+
+Database changes:
+
+- No migration was required; existing quotation tables were used.
+- Real MySQL SELECT/locking/version queries were verified. No workflow fixture was persisted because the configured database has no repair tickets.
+
+API changes:
+
+- Added `GET/POST /api/v1/repair-tickets/:ticketId/quotations`.
+- Added `GET/PATCH /api/v1/quotations/:id` and submit/approve/send/accept/reject action endpoints.
+
+Important decisions:
+
+- Managers own every quotation write before sending; technicians are read-only and require an active assignment; customers see only sent versions and must own the ticket to respond.
+- PART prices cannot be supplied by clients. Authorized manager-entered prices are limited to LABOR/OTHER draft lines.
+- Tax and discount remain zero until an explicit configured business policy exists.
+- Expiry is derived on reads and materialized atomically on response or replacement creation, preserving ticket history without requiring a scheduler.
+
+Verification:
+
+- Backend typecheck/build passed; all 112 backend tests passed.
+- Frontend lint/build passed; all 16 frontend tests passed.
+- Phase 6 repository read/locking queries passed against real MySQL.
+
+Remaining:
+
+- Phase 7 parts catalog, inventory ledger, and part-request fulfillment.
+- Replace numeric Part ID inputs with the authorized parts catalog once Phase 7 endpoints exist.
+
 ## 2026-07-15 — MySQL pagination prepared-statement compatibility fix
 
 Completed:

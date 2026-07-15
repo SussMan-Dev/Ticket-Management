@@ -7,6 +7,10 @@ import {
   ticketDiagnosisRouter,
 } from "../modules/diagnoses/diagnosis.route.js";
 import { deviceRouter } from "../modules/devices/device.route.js";
+import {
+  quotationRouter,
+  ticketQuotationRouter,
+} from "../modules/quotations/quotation.route.js";
 import { repairTicketRouter } from "../modules/repair-tickets/repair-ticket.route.js";
 import { ticketAssignmentRouter } from "../modules/ticket-assignments/ticket-assignment.route.js";
 import { userRouter } from "../modules/users/user.route.js";
@@ -30,5 +34,7 @@ apiRouter.use("/customers", customerRouter);
 apiRouter.use("/devices", deviceRouter);
 apiRouter.use("/repair-tickets", ticketAssignmentRouter);
 apiRouter.use("/repair-tickets", ticketDiagnosisRouter);
+apiRouter.use("/repair-tickets", ticketQuotationRouter);
 apiRouter.use("/repair-tickets", repairTicketRouter);
 apiRouter.use("/diagnoses", diagnosisRouter);
+apiRouter.use("/quotations", quotationRouter);

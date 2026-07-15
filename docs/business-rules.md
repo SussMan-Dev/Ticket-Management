@@ -47,7 +47,9 @@
 
 - Quotation item descriptions, quantities, and unit prices are snapshots.
 - Versions are unique per ticket. Creating a replacement supersedes the previous active quotation.
-- Only a manager-approved quotation may be sent. Only the owning customer may accept or reject it, and expired quotations cannot be accepted.
+- Initial quotation items consume an approved diagnosis. Catalog part descriptions/prices and all line/header totals are server-authoritative; tax and discount remain zero until configured policy exists.
+- Only a manager-approved quotation with a future expiry may be sent. Only the owning customer may accept or reject it while sent and unexpired.
+- Acceptance moves the ticket to parts waiting when part lines exist, otherwise repair; rejection records `CUSTOMER_REJECTED`. Materialized expiry returns the ticket to `WAITING_FOR_QUOTATION` with status history.
 
 ## Inventory
 

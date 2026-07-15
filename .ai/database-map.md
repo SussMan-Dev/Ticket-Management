@@ -158,6 +158,7 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Important columns: version, status, amount components, expiry, approval/send/response timestamps.
 - Important indexes: unique `(ticket_id, version)`, `(ticket_id, status)`.
 - Owned by: Quotations.
+- Implementation: Phase 6 locks the ticket/current quotation, allocates versions, records approval/send/response timestamps, and materializes expiry transactionally.
 - Read full schema when: version, totals, approval, expiry, or response changes.
 
 ## quotation_items
@@ -168,6 +169,7 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Important columns: type, description, positive quantity, unit price, line total.
 - Important indexes: quotation.
 - Owned by: Quotations.
+- Implementation: initial lines snapshot approved diagnosis labor and catalog part prices; DRAFT replacement recalculates line/header totals server-side.
 - Read full schema when: totals, item types, or price snapshot changes.
 
 ## part_requests
