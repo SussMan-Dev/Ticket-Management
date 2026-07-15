@@ -12,10 +12,16 @@ const imageTypes = {
 
 export interface StoredImage {
   url: string;
+  mimeType: string;
 }
 
 export interface ImageStorage {
   storeAvatar(userId: number, bytes: Buffer, mimeType: string): Promise<StoredImage>;
+  storeTicketAttachment(
+    ticketId: number,
+    bytes: Buffer,
+    mimeType: string,
+  ): Promise<StoredImage>;
   deleteByUrl(url: string): Promise<void>;
 }
 
@@ -78,25 +84,79 @@ export class ImageStorageService implements ImageStorage {
 
     return {
       url: new URL(`/uploads/avatars/${fileName}`, this.publicBaseUrl).toString(),
+      mimeType: normalizedMimeType,
+    };
+  }
+
+  public async storeTicketAttachment(
+    ticketId: number,
+    bytes: Buffer,
+    mimeType: string,
+  ): Promise<StoredImage> {
+    const normalizedMimeType = mimeType.toLowerCase().split(";", 1)[0]?.trim() ?? "";
+    const imageType = imageTypes[normalizedMimeType as keyof typeof imageTypes];
+
+    if (!imageType) {
+      throw new BadRequestError(
+        "Ticket attachment must be a JPEG, PNG, or WebP image",
+        "UNSUPPORTED_IMAGE_TYPE",
+      );
+    }
+    if (bytes.length === 0) {
+      throw new BadRequestError("Ticket attachment file is empty", "EMPTY_IMAGE_FILE");
+    }
+    if (bytes.length > this.maximumBytes) {
+      throw new BadRequestError(
+        `Ticket attachment may not exceed ${this.maximumBytes} bytes`,
+        "IMAGE_TOO_LARGE",
+      );
+    }
+    if (!imageType.matches(bytes)) {
+      throw new BadRequestError(
+        "Ticket attachment content does not match its image type",
+        "IMAGE_CONTENT_MISMATCH",
+      );
+    }
+
+    const ticketDirectory = path.join(this.rootDirectory, "tickets", String(ticketId));
+    await mkdir(ticketDirectory, { recursive: true });
+    const fileName = `ticket-${ticketId}-${randomUUID()}.${imageType.extension}`;
+    await writeFile(path.join(ticketDirectory, fileName), bytes, { flag: "wx" });
+
+    return {
+      url: new URL(
+        `/uploads/tickets/${ticketId}/${fileName}`,
+        this.publicBaseUrl,
+      ).toString(),
+      mimeType: normalizedMimeType,
     };
   }
 
   public async deleteByUrl(url: string): Promise<void> {
     const parsedUrl = new URL(url);
     const publicUrl = new URL(this.publicBaseUrl);
-    const prefix = "/uploads/avatars/";
-
-    if (parsedUrl.origin !== publicUrl.origin || !parsedUrl.pathname.startsWith(prefix)) {
+    if (parsedUrl.origin !== publicUrl.origin) {
       return;
     }
 
-    const fileName = path.basename(parsedUrl.pathname);
-    if (!/^user-\d+-[0-9a-f-]+\.(?:jpg|png|webp)$/i.test(fileName)) {
+    const avatarMatch = parsedUrl.pathname.match(
+      /^\/uploads\/avatars\/(user-\d+-[0-9a-f-]+\.(?:jpg|png|webp))$/i,
+    );
+    const ticketMatch = parsedUrl.pathname.match(
+      /^\/uploads\/tickets\/(\d+)\/(ticket-\1-[0-9a-f-]+\.(?:jpg|png|webp))$/i,
+    );
+    const targetPath = avatarMatch
+      ? path.join(this.avatarDirectory, avatarMatch[1]!)
+      : ticketMatch
+        ? path.join(this.rootDirectory, "tickets", ticketMatch[1]!, ticketMatch[2]!)
+        : null;
+
+    if (!targetPath) {
       return;
     }
 
     try {
-      await unlink(path.join(this.avatarDirectory, fileName));
+      await unlink(targetPath);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
         throw error;

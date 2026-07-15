@@ -9,6 +9,10 @@ import { ConflictError } from "../../common/errors/conflict-error.js";
 import { ForbiddenError } from "../../common/errors/forbidden-error.js";
 import { NotFoundError } from "../../common/errors/not-found-error.js";
 import { withTransaction } from "../../common/utils/transaction.util.js";
+import {
+  imageStorageService,
+  type ImageStorage,
+} from "../../common/services/image-storage.service.js";
 import { pool } from "../../config/database.js";
 import type {
   CreateRepairTicketDto,
@@ -74,6 +78,7 @@ export class RepairTicketService {
   public constructor(
     private readonly repository: RepairTicketRepository = repairTicketRepository,
     private readonly runInTransaction: TransactionRunner = withTransaction,
+    private readonly images: ImageStorage = imageStorageService,
   ) {}
 
   public async list(
@@ -201,6 +206,7 @@ export class RepairTicketService {
         createdBy: actor.id,
         title: input.title,
         customerIssue: input.customerIssue,
+        repairAddress: input.repairAddress,
         initialCondition: input.initialCondition,
         accessoriesReceived: input.accessoriesReceived,
         status: initialStatus,
@@ -260,7 +266,16 @@ export class RepairTicketService {
           );
         }
       } else if (isTicketStaff(actor)) {
-        if (!["NEW", "RECEIVED", "ON_HOLD"].includes(current.status)) {
+        const addressOnlyUpdate = Object.keys(input).every(
+          (field) => field === "repairAddress",
+        );
+        const mayCorrectAddress = addressOnlyUpdate &&
+          !TERMINAL_TICKET_STATUSES.has(current.status);
+
+        if (
+          !["NEW", "RECEIVED", "ON_HOLD"].includes(current.status) &&
+          !mayCorrectAddress
+        ) {
           throw new ConflictError(
             "Ticket intake details can no longer be edited",
             "TICKET_NOT_EDITABLE",
@@ -402,6 +417,46 @@ export class RepairTicketService {
 
       return toTicketAttachment(created);
     });
+  }
+
+  public async createAttachmentFile(
+    actor: Express.AuthenticatedUser,
+    ticketId: number,
+    input: {
+      attachmentType: TicketAttachmentType;
+      fileName: string;
+      bytes: Buffer;
+      mimeType: string;
+    },
+  ): Promise<TicketAttachment> {
+    const ticket = await this.requireTicket(pool, ticketId);
+    await this.assertTicketVisibility(pool, actor, ticket);
+
+    if (TERMINAL_TICKET_STATUSES.has(ticket.status)) {
+      throw new ConflictError(
+        "Attachments cannot be added to a terminal ticket",
+        "TICKET_TERMINAL",
+      );
+    }
+
+    this.assertAttachmentType(actor, input.attachmentType);
+    const storedImage = await this.images.storeTicketAttachment(
+      ticketId,
+      input.bytes,
+      input.mimeType,
+    );
+
+    try {
+      return await this.createAttachment(actor, ticketId, {
+        attachmentType: input.attachmentType,
+        fileUrl: storedImage.url,
+        fileName: input.fileName,
+        mimeType: storedImage.mimeType,
+      });
+    } catch (error) {
+      await this.images.deleteByUrl(storedImage.url);
+      throw error;
+    }
   }
 
   private async requireTicket(

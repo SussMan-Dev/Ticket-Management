@@ -14,7 +14,7 @@ Implemented under `src/modules/repair-tickets/` using route, controller, service
 
 ## Public APIs
 
-Implemented in Phase 4: `GET/POST /repair-tickets`, `GET/PATCH /repair-tickets/:id`, `/receive`, `/change-status`, `/cancel`, `/status-history`, and `GET/POST /attachments`. `GET /customers/:id/tickets` is also implemented through this service. Phase 5 adds assignment/reassignment; Phase 8 exposes the role-sanitized aggregated timeline at `/repair-tickets/:id/timeline` through the Repair Actions integration.
+Implemented in Phase 4: `GET/POST /repair-tickets`, `GET/PATCH /repair-tickets/:id`, `/receive`, `/change-status`, `/cancel`, `/status-history`, and `GET/POST /attachments`. Raw local image upload is available at `POST /repair-tickets/:id/attachment-files`. `GET /customers/:id/tickets` is also implemented through this service. Phase 5 adds assignment/reassignment; Phase 8 exposes the role-sanitized aggregated timeline at `/repair-tickets/:id/timeline` through the Repair Actions integration.
 
 ## Allowed roles
 
@@ -22,7 +22,7 @@ Customers act on owned tickets; receptionists manage intake and receive; technic
 
 ## Business rules
 
-Generate a unique `RT-YYYY-NNNNNN` code from the inserted ticket identity. Creation requires an active customer-owned, non-deleted device whose category remains active. Customers cannot set priority, SLA dates, another owner, or receive state. Validate every state transition and actor permission. Append history in the same transaction and never overwrite it. Attachments store validated HTTP(S) metadata only; no delete endpoint is exposed.
+Generate a unique `RT-YYYY-NNNNNN` code from the inserted ticket identity. Creation requires an active customer-owned, non-deleted device whose category remains active and a repair-address snapshot independent from the customer profile. Legacy rows may remain null; customers can set/correct the address while `NEW`, and receptionists/managers can correct only that field until terminal state. Customers cannot set priority, SLA dates, another owner, or receive state. Validate every state transition and actor permission. Append history in the same transaction and never overwrite it. Attachments support validated HTTP(S) metadata and raw JPEG/PNG/WebP upload with signature/size validation, random server filenames, and cleanup if metadata persistence fails; no delete endpoint is exposed.
 
 ## State transitions
 
@@ -46,4 +46,4 @@ Ticket/device not found, ownership mismatch, invalid transition, stale state, fo
 
 ## Security considerations
 
-Check ownership/assignment in services. Validate attachment URLs and MIME metadata. Use row locks to prevent concurrent state transitions.
+Check ownership/assignment in services before storing an image. Validate attachment URLs, raw MIME type, image signature, size, and filename. Assigned technicians may upload only during/after-repair image types. Use row locks to prevent concurrent state transitions.

@@ -2,7 +2,7 @@
 
 ## Goal
 
-Allow authenticated users to choose and save their profile avatar directly from a local device file.
+Allow technicians to select repair photos from device files and persist a repair address directly on each ticket, independently from the customer's profile address.
 
 ## Status
 
@@ -10,22 +10,23 @@ Completed on 2026-07-15.
 
 ## Delivered
 
-- Added `POST /api/v1/users/:id/avatar` for self/Admin-scoped raw image upload and audited avatar updates.
-- Added local image storage with configurable public URL, directory, and 5 MB default limit; generated files use random server-owned names.
-- Accepted only JPEG, PNG, and WebP after checking both MIME type and file signature; SVG, empty files, mismatches, and oversize payloads are rejected.
-- Served generated raster images with immutable caching, `nosniff`, and cross-origin resource policy suitable for the separate Vite development origin.
-- Removed a previous locally managed avatar only after the new database value commits; database failures clean up the newly written file.
-- Added a responsive avatar file picker with preview, file-name feedback, client validation, and immediate profile/header/sidebar refresh.
-- Added configuration examples and ignored runtime upload files from version control.
-- No package or database migration was required; existing `users.avatar_url` stores the generated public URL.
+- Added migration `003_add_repair_ticket_address.sql` and the canonical nullable `repair_tickets.repair_address` column for legacy compatibility.
+- Made `repairAddress` required for every new ticket and exposed it across DTO/schema/model/repository/service/API/frontend contracts.
+- Displayed the ticket-owned address in detail and added an editor: customers may edit while `NEW`; receptionists/managers may correct only the address on any non-terminal ticket.
+- Added `POST /api/v1/repair-tickets/:id/attachment-files` for raw JPEG/PNG/WebP ticket image upload.
+- Reused configurable local image storage with MIME/signature/size checks, random ticket-owned filenames, public URLs, and orphan cleanup when metadata persistence fails.
+- Preserved ownership and role/type checks: an assigned technician can upload only `DURING_REPAIR` and `AFTER_REPAIR` images.
+- Replaced the frontend URL form with a responsive local-file picker, preview, client validation, upload state, and image gallery.
+- Applied migration 003 to the configured development database. Three existing legacy tickets remain without a guessed address and can be corrected through the authorized UI.
 
 ## Verification
 
 - [x] Backend TypeScript typecheck passed
 - [x] Backend production build passed
-- [x] All 198 backend tests passed
+- [x] All 204 backend tests passed
 - [x] Frontend TypeScript typecheck passed
 - [x] Frontend lint passed with zero warnings
-- [x] All 34 frontend tests passed
+- [x] All 36 frontend tests passed
 - [x] Frontend production build passed
-- [x] File storage, MIME/signature validation, ownership, raw transport, and picker validation have regression tests
+- [x] Migration column verified against the configured MySQL database
+- [x] Address ownership/edit rules, raw upload routing, signature validation, storage cleanup primitives, and file pickers have regression tests

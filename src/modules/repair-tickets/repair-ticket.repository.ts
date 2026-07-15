@@ -58,6 +58,7 @@ const ticketColumns = `
   creator.full_name AS creator_name,
   rt.title,
   rt.customer_issue,
+  rt.repair_address,
   rt.initial_condition,
   rt.accessories_received,
   rt.status,
@@ -268,6 +269,7 @@ export class RepairTicketRepository {
           created_by,
           title,
           customer_issue,
+          repair_address,
           initial_condition,
           accessories_received,
           status,
@@ -276,7 +278,7 @@ export class RepairTicketRepository {
           expected_completion_at,
           received_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         input.placeholderCode,
@@ -285,6 +287,7 @@ export class RepairTicketRepository {
         input.createdBy,
         input.title,
         input.customerIssue,
+        input.repairAddress,
         input.initialCondition ?? null,
         input.accessoriesReceived ?? null,
         input.status,
@@ -321,6 +324,7 @@ export class RepairTicketRepository {
     const columnByField: Record<keyof UpdateRepairTicketDto, string> = {
       title: "title",
       customerIssue: "customer_issue",
+      repairAddress: "repair_address",
       initialCondition: "initial_condition",
       accessoriesReceived: "accessories_received",
       priority: "priority",

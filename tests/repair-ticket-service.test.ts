@@ -57,6 +57,7 @@ function row(overrides: Record<string, unknown> = {}): RepairTicketRow {
     creator_name: "Customer User",
     title: "Screen is broken",
     customer_issue: "The screen does not display anything",
+    repair_address: "12 Nguyen Trai, District 1",
     initial_condition: null,
     accessories_received: null,
     status: "NEW",
@@ -94,14 +95,20 @@ function dependencies() {
   const transaction = vi.fn(async <T>(callback: (value: PoolConnection) => Promise<T>) =>
     callback(connection),
   );
+  const images = {
+    storeAvatar: vi.fn(),
+    storeTicketAttachment: vi.fn(),
+    deleteByUrl: vi.fn(),
+  };
   const service = new RepairTicketService(
     repository as unknown as RepairTicketRepository,
     transaction as unknown as <T>(
       callback: (value: PoolConnection) => Promise<T>,
     ) => Promise<T>,
+    images,
   );
 
-  return { service, repository, transaction };
+  return { service, repository, transaction, images };
 }
 
 describe("RepairTicketService", () => {
@@ -173,6 +180,7 @@ describe("RepairTicketService", () => {
       deviceId: 7,
       title: "Screen is broken",
       customerIssue: "The screen does not display anything",
+      repairAddress: "12 Nguyen Trai, District 1",
       priority: "NORMAL",
       receiveNow: false,
     });
@@ -208,6 +216,7 @@ describe("RepairTicketService", () => {
         deviceId: 7,
         title: "Screen is broken",
         customerIssue: "The screen does not display anything",
+        repairAddress: "12 Nguyen Trai, District 1",
         priority: "NORMAL",
         receiveNow: false,
       }),
@@ -218,6 +227,7 @@ describe("RepairTicketService", () => {
         deviceId: 7,
         title: "Screen is broken",
         customerIssue: "The screen does not display anything",
+        repairAddress: "12 Nguyen Trai, District 1",
         priority: "URGENT",
         receiveNow: false,
       }),
@@ -238,6 +248,7 @@ describe("RepairTicketService", () => {
       deviceId: 7,
       title: "Screen is broken",
       customerIssue: "The screen does not display anything",
+      repairAddress: "12 Nguyen Trai, District 1",
       priority: "HIGH",
       receiveNow: true,
     });
@@ -262,6 +273,25 @@ describe("RepairTicketService", () => {
     deps.repository.findById.mockResolvedValue(row({ status: "RECEIVED" }));
     await expect(
       deps.service.update(customer, 10, { title: "Too late" }),
+    ).rejects.toMatchObject({ code: "TICKET_NOT_EDITABLE" });
+  });
+
+  it("allows staff to correct only the repair address after intake", async () => {
+    const deps = dependencies();
+    deps.repository.findById
+      .mockResolvedValueOnce(row({ status: "REPAIRING" }))
+      .mockResolvedValueOnce(row({
+        status: "REPAIRING",
+        repair_address: "99 Le Loi, District 1",
+      }));
+
+    await expect(
+      deps.service.update(manager, 10, { repairAddress: "99 Le Loi, District 1" }),
+    ).resolves.toMatchObject({ repairAddress: "99 Le Loi, District 1" });
+
+    deps.repository.findById.mockResolvedValue(row({ status: "REPAIRING" }));
+    await expect(
+      deps.service.update(manager, 10, { title: "Late intake edit" }),
     ).rejects.toMatchObject({ code: "TICKET_NOT_EDITABLE" });
   });
 
@@ -378,5 +408,88 @@ describe("RepairTicketService", () => {
       2,
       expect.objectContaining({ attachmentType: "CUSTOMER_ATTACHMENT" }),
     );
+  });
+
+  it("stores a technician image and persists its generated URL", async () => {
+    const deps = dependencies();
+    deps.repository.findById.mockResolvedValue(row({ status: "REPAIRING" }));
+    deps.repository.hasActiveAssignment.mockResolvedValue(true);
+    deps.images.storeTicketAttachment.mockResolvedValue({
+      url: "http://localhost:3000/uploads/tickets/10/ticket-10-image.png",
+      mimeType: "image/png",
+    });
+    deps.repository.createAttachment.mockResolvedValue(21);
+    deps.repository.findAttachmentById.mockResolvedValue({
+      id: 21,
+      ticket_id: 10,
+      uploaded_by: 6,
+      uploaded_by_name: "Technician User",
+      uploaded_by_role: "TECHNICIAN",
+      attachment_type: "DURING_REPAIR",
+      file_url: "http://localhost:3000/uploads/tickets/10/ticket-10-image.png",
+      file_name: "repair.png",
+      mime_type: "image/png",
+      created_at: new Date(),
+    });
+    const bytes = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+
+    const attachment = await deps.service.createAttachmentFile(technician, 10, {
+      attachmentType: "DURING_REPAIR",
+      fileName: "repair.png",
+      bytes,
+      mimeType: "image/png",
+    });
+
+    expect(attachment.id).toBe(21);
+    expect(deps.images.storeTicketAttachment).toHaveBeenCalledWith(
+      10,
+      bytes,
+      "image/png",
+    );
+    expect(deps.repository.createAttachment).toHaveBeenCalledWith(
+      connection,
+      10,
+      6,
+      expect.objectContaining({
+        attachmentType: "DURING_REPAIR",
+        fileUrl: expect.stringContaining("/uploads/tickets/10/"),
+      }),
+    );
+  });
+
+  it("checks technician assignment before writing an attachment file", async () => {
+    const deps = dependencies();
+    deps.repository.findById.mockResolvedValue(row({ status: "REPAIRING" }));
+    deps.repository.hasActiveAssignment.mockResolvedValue(false);
+
+    await expect(deps.service.createAttachmentFile(technician, 10, {
+      attachmentType: "DURING_REPAIR",
+      fileName: "repair.png",
+      bytes: Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+      mimeType: "image/png",
+    })).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    expect(deps.images.storeTicketAttachment).not.toHaveBeenCalled();
+  });
+
+  it("removes a stored ticket image when metadata persistence fails", async () => {
+    const deps = dependencies();
+    deps.repository.findById.mockResolvedValue(row({ status: "REPAIRING" }));
+    deps.repository.hasActiveAssignment.mockResolvedValue(true);
+    const storedUrl = "http://localhost:3000/uploads/tickets/10/ticket-10-image.png";
+    deps.images.storeTicketAttachment.mockResolvedValue({
+      url: storedUrl,
+      mimeType: "image/png",
+    });
+    deps.repository.createAttachment.mockRejectedValue(new Error("Database unavailable"));
+
+    await expect(deps.service.createAttachmentFile(technician, 10, {
+      attachmentType: "DURING_REPAIR",
+      fileName: "repair.png",
+      bytes: Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+      mimeType: "image/png",
+    })).rejects.toThrow("Database unavailable");
+
+    expect(deps.images.deleteByUrl).toHaveBeenCalledWith(storedUrl);
   });
 });

@@ -62,6 +62,7 @@ export const createRepairTicketSchema = z.object({
       deviceId: positiveId,
       title: z.string().trim().min(3).max(255),
       customerIssue: z.string().trim().min(3).max(5_000),
+      repairAddress: z.string().trim().min(5).max(500),
       initialCondition: optionalText(5_000),
       accessoriesReceived: optionalText(5_000),
       priority: z.enum(TICKET_PRIORITIES).default("NORMAL"),
@@ -82,6 +83,7 @@ export const updateRepairTicketSchema = z.object({
     .object({
       title: z.string().trim().min(3).max(255).optional(),
       customerIssue: z.string().trim().min(3).max(5_000).optional(),
+      repairAddress: z.string().trim().min(5).max(500).optional(),
       initialCondition: optionalText(5_000),
       accessoriesReceived: optionalText(5_000),
       priority: z.enum(TICKET_PRIORITIES).optional(),
@@ -159,6 +161,23 @@ export const createTicketAttachmentSchema = z.object({
     .strict(),
 });
 
+export const uploadTicketAttachmentSchema = z.object({
+  params: z.object({ id: positiveId }).strict(),
+  query: z
+    .object({
+      attachmentType: z.enum(TICKET_ATTACHMENT_TYPES),
+      fileName: z
+        .string()
+        .trim()
+        .min(1)
+        .max(255)
+        .refine((value) => !/[\\/\u0000-\u001f]/u.test(value), {
+          message: "File name contains invalid characters",
+        }),
+    })
+    .strict(),
+});
+
 export type RepairTicketIdParams = z.infer<
   typeof repairTicketIdParamsSchema
 >["params"];
@@ -186,3 +205,6 @@ export type CancelRepairTicketBody = z.infer<
 export type CreateTicketAttachmentBody = z.infer<
   typeof createTicketAttachmentSchema
 >["body"];
+export type UploadTicketAttachmentQuery = z.infer<
+  typeof uploadTicketAttachmentSchema
+>["query"];

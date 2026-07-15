@@ -18,6 +18,7 @@ describe("customer ownership UI", () => {
     expect(screen.queryByLabelText("Khách hàng")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Mức ưu tiên")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Dự kiến chẩn đoán")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/^Địa chỉ sửa chữa/)).toBeInTheDocument();
     expect(await screen.findByLabelText(/^Thiết bị/)).toBeInTheDocument();
   });
 });

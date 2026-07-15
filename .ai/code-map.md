@@ -82,17 +82,17 @@ Important rules: owner-only customer access; device/category must be active for 
 
 ## Repair Tickets Module
 
-Purpose: complete repair-ticket lifecycle, retrieval, filters, intake, status history, attachments, and timeline.
+Purpose: complete repair-ticket lifecycle, retrieval, filters, ticket-owned repair address, intake, status history, URL/raw-image attachments, and timeline.
 
 Main files: `src/modules/repair-tickets/repair-ticket.route.ts`, `repair-ticket.controller.ts`, `repair-ticket.service.ts`, `repair-ticket.repository.ts`, `repair-ticket.model.ts`, `repair-ticket.schema.ts`, `repair-ticket.dto.ts` (implemented Phase 4).
 
 Tables: `repair_tickets`, `ticket_status_history`, `ticket_attachments`.
 
-Dependencies: users, devices, assignments, notifications, and downstream workflow modules.
+Dependencies: users, devices, assignments, notifications, shared image storage, and downstream workflow modules.
 
 Read when: creating/updating tickets, status transitions, ticket filters/timeline, or ownership logic.
 
-Important rules: customers access only owned tickets; technicians require an active assignment; every status change validates transition and writes history in one transaction; use row locks for concurrency. Phase 4 exposes receive, configured cancellation, and manager hold/resume only. Attachment URLs are validated metadata with role-specific types and no destructive delete endpoint.
+Important rules: customers access only owned tickets; technicians require an active assignment; every status change validates transition and writes history in one transaction; use row locks for concurrency. New tickets snapshot a required repair address; legacy rows may be corrected by authorized staff until terminal state. Phase 4 exposes receive, configured cancellation, and manager hold/resume only. Attachment URLs and raw raster images are validated with role-specific types and no destructive delete endpoint.
 
 ## Ticket Assignments Module
 

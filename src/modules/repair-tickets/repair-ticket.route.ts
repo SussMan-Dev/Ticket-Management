@@ -1,4 +1,5 @@
-import { Router } from "express";
+import express, { Router } from "express";
+import { env } from "../../config/env.js";
 import { asyncHandler } from "../../common/utils/async-handler.js";
 import { authenticate } from "../../middlewares/authentication.middleware.js";
 import { authorize } from "../../middlewares/authorization.middleware.js";
@@ -13,6 +14,7 @@ import {
   receiveRepairTicketSchema,
   repairTicketIdParamsSchema,
   updateRepairTicketSchema,
+  uploadTicketAttachmentSchema,
 } from "./repair-ticket.schema.js";
 
 export const repairTicketRouter = Router();
@@ -47,6 +49,16 @@ repairTicketRouter.post(
   authorize("CUSTOMER", "RECEPTIONIST", "TECHNICIAN", "MANAGER"),
   validate(createTicketAttachmentSchema),
   asyncHandler(repairTicketController.createAttachment),
+);
+repairTicketRouter.post(
+  "/:id/attachment-files",
+  authorize("CUSTOMER", "RECEPTIONIST", "TECHNICIAN", "MANAGER"),
+  express.raw({
+    type: ["image/jpeg", "image/png", "image/webp"],
+    limit: env.IMAGE_UPLOAD_MAX_BYTES,
+  }),
+  validate(uploadTicketAttachmentSchema),
+  asyncHandler(repairTicketController.createAttachmentFile),
 );
 repairTicketRouter.post(
   "/:id/receive",

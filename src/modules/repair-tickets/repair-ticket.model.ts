@@ -29,6 +29,7 @@ export interface RepairTicketRow extends RowDataPacket {
   creator_name: string;
   title: string;
   customer_issue: string;
+  repair_address: string | null;
   initial_condition: string | null;
   accessories_received: string | null;
   status: TicketStatus;
@@ -99,6 +100,7 @@ export interface RepairTicket {
   };
   title: string;
   customerIssue: string;
+  repairAddress: string | null;
   initialCondition: string | null;
   accessoriesReceived: string | null;
   status: TicketStatus;
@@ -164,6 +166,7 @@ export function toRepairTicket(row: RepairTicketRow): RepairTicket {
     },
     title: row.title,
     customerIssue: row.customer_issue,
+    repairAddress: row.repair_address,
     initialCondition: row.initial_condition,
     accessoriesReceived: row.accessories_received,
     status: row.status,

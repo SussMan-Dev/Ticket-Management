@@ -1,5 +1,21 @@
 # Task History
 
+## 2026-07-15 — Ticket repair address and local repair-photo upload
+
+Completed:
+
+- Added migration 003 and a ticket-owned repair-address snapshot required for new tickets, without copying or coupling it to the customer profile address.
+- Added controlled legacy address correction for customers while `NEW` and receptionists/managers until terminal state.
+- Added raw JPEG/PNG/WebP ticket image upload with size/signature checks, random server filenames, safe generated URLs, orphan cleanup, and existing role/type/assignment enforcement.
+- Replaced attachment URL entry with a responsive device-file picker, preview, upload feedback, and image gallery.
+- Updated the repair-ticket API/database/module/business-rule documentation and applied/verified the migration on the configured development database.
+
+Verification:
+
+- Backend typecheck/build passed; all 204 backend tests passed.
+- Frontend typecheck/lint/build passed; all 36 frontend tests passed.
+- No new package was required.
+
 ## 2026-07-15 — Local profile avatar upload
 
 Completed:

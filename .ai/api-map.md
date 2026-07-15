@@ -88,7 +88,7 @@ Rules: verify customer ownership; require an active customer for creation; requi
 
 ## Repair Tickets
 
-Status: implemented through Phase 10 for intake CRUD, visibility, receive, hold/resume, cancellation, status history, URL-based attachment metadata, assignment integration, the complete aggregated timeline, and cashier completed-ticket lookup. Downstream workflow transitions remain owned by their modules.
+Status: implemented through Phase 10 for intake CRUD, ticket-owned repair addresses, visibility, receive, hold/resume, cancellation, status history, URL metadata and raw local image attachments, assignment integration, the complete aggregated timeline, and cashier completed-ticket lookup. Downstream workflow transitions remain owned by their modules.
 
 Controller/service/repository: `repairTicketController`, `repairTicketService`, `repairTicketRepository`. Core tables: `repair_tickets`, `ticket_status_history`, `ticket_attachments`; assignment endpoints also use `ticket_assignments`.
 
@@ -107,9 +107,10 @@ Controller/service/repository: `repairTicketController`, `repairTicketService`, 
 | `GET /repair-tickets/:id/status-history` | Same visibility as ticket | No | 4 |
 | `GET /repair-tickets/:id/attachments` | Same visibility as ticket | No | 4 |
 | `POST /repair-tickets/:id/attachments` | Owner, RECEPTIONIST, assigned TECHNICIAN, MANAGER by type | Yes | 4 |
+| `POST /repair-tickets/:id/attachment-files` | Owner, RECEPTIONIST, assigned TECHNICIAN, MANAGER by type | File write then transaction | Extended |
 | `GET /repair-tickets/:id/timeline` | Same visibility as ticket | No | 8 |
 
-Request notes: list supports bounded pagination, search, status/priority/customer/device filters, and whitelisted sorting. Customers are always owner-scoped; technicians are always active-assignment-scoped. Staff creation requires `customerId`; only a receptionist may set `receiveNow=true`. Attachment URLs must use HTTP(S), and filename/MIME metadata is validated.
+Request notes: list supports bounded pagination, search, status/priority/customer/device filters, and whitelisted sorting. Customers are always owner-scoped; technicians are always active-assignment-scoped. Staff creation requires `customerId`; every create requires `repairAddress`; only a receptionist may set `receiveNow=true`. Raw attachment upload uses JPEG/PNG/WebP bytes plus `attachmentType` and safe `fileName` query fields, with the same role/type rules as metadata creation. Attachment URLs must use HTTP(S), and filename/MIME metadata is validated.
 
 Rules: customer device ownership; active customer/device/category for creation; unique `RT-YYYY-NNNNNN` code; validated transition map; actor-specific permission; lock current row and append history atomically; technicians require active assignment. Manager status changes remain limited to `RECEIVED <-> ON_HOLD`; implemented assignment/diagnosis and future quotation/repair/payment/delivery transitions cannot be bypassed through the generic endpoint.
 

@@ -33,8 +33,9 @@
 - Ticket codes are unique and use the form `RT-YYYY-NNNNNN`.
 - Terminal states are `CLOSED` and `CANCELLED`; history is never deleted.
 - Customers may edit/cancel only their own `NEW` ticket and cannot set priority, expected dates, or received state. Technicians see only tickets with an active assignment.
+- Every new ticket snapshots a required repair address independently from the customer's profile address. Customers may change it only while `NEW`; receptionists and managers may correct only this address until the ticket becomes terminal so legacy tickets can be completed accurately.
 - Repair Tickets permits direct receive, cancellation, and manager hold/resume between `RECEIVED` and `ON_HOLD`. Phase 5 assignment/diagnosis transitions run only through their owning services; later workflow transitions cannot be invoked early through the generic status endpoint.
-- Ticket attachments store validated HTTP(S) metadata. Type permissions are role-specific, and no attachment may be added to a terminal ticket.
+- Ticket attachments may store validated HTTP(S) metadata or generated URLs for raw JPEG/PNG/WebP uploads. Raw images are size/signature validated and use random server filenames. Type permissions are role-specific, assigned technicians are limited to during/after-repair images, and no attachment may be added to a terminal ticket.
 
 ## Assignments and diagnosis
 

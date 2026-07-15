@@ -26,6 +26,7 @@ export interface CreateRepairTicketDto {
   deviceId: number;
   title: string;
   customerIssue: string;
+  repairAddress: string;
   initialCondition?: string | null;
   accessoriesReceived?: string | null;
   priority: TicketPriority;
@@ -37,6 +38,7 @@ export interface CreateRepairTicketDto {
 export interface UpdateRepairTicketDto {
   title?: string;
   customerIssue?: string;
+  repairAddress?: string;
   initialCondition?: string | null;
   accessoriesReceived?: string | null;
   priority?: TicketPriority;

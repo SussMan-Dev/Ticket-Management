@@ -24,6 +24,7 @@ export interface TicketInput {
   deviceId: number;
   title: string;
   customerIssue: string;
+  repairAddress: string;
   initialCondition?: string | null;
   accessoriesReceived?: string | null;
   priority: TicketPriority;
@@ -38,6 +39,25 @@ export interface AttachmentInput {
   fileName?: string | null;
   mimeType?: string | null;
 }
+
+export interface AttachmentUploadInput {
+  attachmentType: TicketAttachmentType;
+  file: File;
+}
+
+export type TicketUpdateInput = Partial<
+  Pick<
+    TicketInput,
+    | "title"
+    | "customerIssue"
+    | "repairAddress"
+    | "initialCondition"
+    | "accessoriesReceived"
+    | "priority"
+    | "expectedDiagnosisAt"
+    | "expectedCompletionAt"
+  >
+>;
 
 export function useTickets(params: TicketsQuery) {
   return useQuery({
@@ -100,6 +120,12 @@ export function useCreateTicket() {
   );
 }
 
+export function useUpdateTicket(ticketId: number) {
+  return useTicketMutation(async (input: TicketUpdateInput) =>
+    (await apiClient.patch<RepairTicket>(`/repair-tickets/${ticketId}`, input)).data,
+  ticketId);
+}
+
 export function useReceiveTicket(ticketId: number) {
   return useTicketMutation(async (reason?: string) =>
     (await apiClient.post<RepairTicket>(`/repair-tickets/${ticketId}/receive`, reason ? { reason } : {})).data,
@@ -124,5 +150,23 @@ export function useCreateAttachment(ticketId: number) {
     mutationFn: async (input: AttachmentInput) =>
       (await apiClient.post<TicketAttachment>(`/repair-tickets/${ticketId}/attachments`, input)).data,
     onSuccess: async () => queryClient.invalidateQueries({ queryKey: queryKeys.ticketAttachments(ticketId) }),
+  });
+}
+
+export function useUploadTicketAttachment(ticketId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ attachmentType, file }: AttachmentUploadInput) => {
+      const query = new URLSearchParams({ attachmentType, fileName: file.name });
+      return (
+        await apiClient.upload<TicketAttachment>(
+          `/repair-tickets/${ticketId}/attachment-files?${query.toString()}`,
+          file,
+        )
+      ).data;
+    },
+    onSuccess: async () => queryClient.invalidateQueries({
+      queryKey: queryKeys.ticketAttachments(ticketId),
+    }),
   });
 }

@@ -20,6 +20,7 @@ const ticket = {
   createdBy: { id: 2, fullName: "Customer User" },
   title: "Screen is broken",
   customerIssue: "The screen does not display anything",
+  repairAddress: "12 Nguyen Trai, District 1",
   initialCondition: null,
   accessoriesReceived: null,
   status: "NEW" as const,
@@ -80,12 +81,54 @@ describe("repair tickets API", () => {
         deviceId: 7,
         title: "Screen is broken",
         customerIssue: "The screen does not display anything",
+        repairAddress: "12 Nguyen Trai, District 1",
       });
 
     expect(response.status).toBe(201);
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({ id: 2 }),
       expect.objectContaining({ priority: "NORMAL", receiveNow: false }),
+    );
+  });
+
+  it("uploads a validated ticket image from a technician device", async () => {
+    vi.spyOn(authService, "authenticate").mockResolvedValue({
+      id: 6,
+      email: "technician@example.com",
+      role: "TECHNICIAN",
+      sessionId,
+    });
+    const createAttachmentFile = vi
+      .spyOn(repairTicketService, "createAttachmentFile")
+      .mockResolvedValue({
+        id: 20,
+        ticketId: 10,
+        uploadedBy: { id: 6, fullName: "Technician", role: "TECHNICIAN" },
+        attachmentType: "DURING_REPAIR",
+        fileUrl: "http://localhost:3000/uploads/tickets/10/ticket-10-image.png",
+        fileName: "repair.png",
+        mimeType: "image/png",
+        createdAt: new Date(),
+      });
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+    const response = await request(app)
+      .post(`${env.API_PREFIX}/repair-tickets/10/attachment-files`)
+      .query({ attachmentType: "DURING_REPAIR", fileName: "repair.png" })
+      .set("Authorization", "Bearer technician-token")
+      .set("Content-Type", "image/png")
+      .send(png);
+
+    expect(response.status).toBe(201);
+    expect(createAttachmentFile).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 6, role: "TECHNICIAN" }),
+      10,
+      expect.objectContaining({
+        attachmentType: "DURING_REPAIR",
+        fileName: "repair.png",
+        bytes: png,
+        mimeType: "image/png",
+      }),
     );
   });
 

@@ -103,6 +103,7 @@ export interface RepairTicket {
   createdBy: { id: number; fullName: string };
   title: string;
   customerIssue: string;
+  repairAddress: string | null;
   initialCondition: string | null;
   accessoriesReceived: string | null;
   status: TicketStatus;

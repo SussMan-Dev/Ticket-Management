@@ -12,6 +12,7 @@ import type {
   ReceiveRepairTicketBody,
   RepairTicketIdParams,
   UpdateRepairTicketBody,
+  UploadTicketAttachmentQuery,
 } from "./repair-ticket.schema.js";
 import { repairTicketService } from "./repair-ticket.service.js";
 
@@ -148,6 +149,28 @@ export const repairTicketController = {
     return sendSuccess(response, {
       statusCode: 201,
       message: "Repair ticket attachment created successfully",
+      data: attachment,
+    });
+  },
+
+  async createAttachmentFile(request: Request, response: Response): Promise<Response> {
+    const { id } = request.validated?.params as RepairTicketIdParams;
+    const { attachmentType, fileName } = request.validated
+      ?.query as UploadTicketAttachmentQuery;
+    const bytes = Buffer.isBuffer(request.body) ? request.body : Buffer.alloc(0);
+    const attachment = await repairTicketService.createAttachmentFile(
+      authenticatedUser(request),
+      id,
+      {
+        attachmentType,
+        fileName,
+        bytes,
+        mimeType: request.get("content-type") ?? "",
+      },
+    );
+    return sendSuccess(response, {
+      statusCode: 201,
+      message: "Repair ticket image uploaded successfully",
       data: attachment,
     });
   },

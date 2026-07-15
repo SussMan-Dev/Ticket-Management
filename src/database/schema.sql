@@ -108,6 +108,7 @@ CREATE TABLE repair_tickets (
   created_by BIGINT UNSIGNED NOT NULL,
   title VARCHAR(255) NOT NULL,
   customer_issue TEXT NOT NULL,
+  repair_address VARCHAR(500) NULL,
   initial_condition TEXT NULL,
   accessories_received TEXT NULL,
   status VARCHAR(50) NOT NULL,
