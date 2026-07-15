@@ -323,8 +323,8 @@ export class RepairActionService {
         await this.repository.createNotification(connection, {
           userId: ticket.customer_id,
           type: "REPAIR_COMPLETED",
-          title: "Repair completed",
-          content: `Repair ticket ${ticket.ticket_code} passed technical testing.`,
+          title: "Sửa chữa đã hoàn tất",
+          content: `Phiếu sửa chữa ${ticket.ticket_code} đã vượt qua kiểm tra kỹ thuật.`,
           ticketId,
         });
       }

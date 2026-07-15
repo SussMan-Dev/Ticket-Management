@@ -226,8 +226,8 @@ export class DiagnosisService {
         await this.repository.createNotification(connection, {
           userId: managerId,
           type: "DIAGNOSIS_SUBMITTED",
-          title: "Diagnosis awaiting review",
-          content: `A diagnosis for repair ticket ${ticket.ticket_code} is ready for review.`,
+          title: "Chẩn đoán đang chờ duyệt",
+          content: `Bản chẩn đoán của phiếu sửa chữa ${ticket.ticket_code} đã sẵn sàng để xét duyệt.`,
           ticketId: ticket.id,
         });
       }
@@ -284,8 +284,8 @@ export class DiagnosisService {
       await this.repository.createNotification(connection, {
         userId: current.technician_id,
         type: "DIAGNOSIS_REVISION_REQUIRED",
-        title: "Diagnosis revision required",
-        content: `The diagnosis for repair ticket ${ticket.ticket_code} requires revision.`,
+        title: "Yêu cầu chỉnh sửa chẩn đoán",
+        content: `Bản chẩn đoán của phiếu sửa chữa ${ticket.ticket_code} cần được chỉnh sửa.`,
         ticketId: ticket.id,
       });
       await this.auditLogs.create(connection, {
@@ -334,15 +334,15 @@ export class DiagnosisService {
       await this.repository.createNotification(connection, {
         userId: current.technician_id,
         type: "DIAGNOSIS_APPROVED",
-        title: "Diagnosis approved",
-        content: `The diagnosis for repair ticket ${ticket.ticket_code} was approved.`,
+        title: "Chẩn đoán đã được phê duyệt",
+        content: `Bản chẩn đoán của phiếu sửa chữa ${ticket.ticket_code} đã được phê duyệt.`,
         ticketId: ticket.id,
       });
       await this.repository.createNotification(connection, {
         userId: ticket.customer_id,
         type: "DIAGNOSIS_APPROVED",
-        title: "Repair diagnosis approved",
-        content: `The diagnosis for repair ticket ${ticket.ticket_code} was approved and is being prepared for quotation.`,
+        title: "Chẩn đoán sửa chữa đã được phê duyệt",
+        content: `Bản chẩn đoán của phiếu sửa chữa ${ticket.ticket_code} đã được phê duyệt và đang được chuẩn bị báo giá.`,
         ticketId: ticket.id,
       });
       await this.auditLogs.create(connection, {

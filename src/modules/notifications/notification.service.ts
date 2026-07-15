@@ -42,7 +42,7 @@ export class NotificationService {
       actor.id,
     );
     if (!current) {
-      throw new NotFoundError("Notification not found", "NOTIFICATION_NOT_FOUND");
+      throw new NotFoundError("Không tìm thấy thông báo", "NOTIFICATION_NOT_FOUND");
     }
     if (!current.is_read) {
       await this.repository.markRead(pool, notificationId, actor.id);
@@ -53,7 +53,7 @@ export class NotificationService {
       actor.id,
     );
     if (!updated) {
-      throw new NotFoundError("Notification not found", "NOTIFICATION_NOT_FOUND");
+      throw new NotFoundError("Không tìm thấy thông báo", "NOTIFICATION_NOT_FOUND");
     }
     return toNotification(updated);
   }
@@ -64,4 +64,3 @@ export class NotificationService {
 }
 
 export const notificationService = new NotificationService();
-

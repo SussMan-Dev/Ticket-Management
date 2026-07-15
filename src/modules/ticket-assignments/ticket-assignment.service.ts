@@ -107,8 +107,8 @@ export class TicketAssignmentService {
       await this.repository.createNotification(connection, {
         userId: technician.id,
         type: "TICKET_ASSIGNED",
-        title: "New repair ticket assignment",
-        content: `You were assigned repair ticket ${ticket.ticket_code}.`,
+        title: "Phân công phiếu sửa chữa mới",
+        content: `Bạn đã được phân công xử lý phiếu sửa chữa ${ticket.ticket_code}.`,
         ticketId,
       });
       await this.auditLogs.create(connection, {
@@ -180,15 +180,15 @@ export class TicketAssignmentService {
       await this.repository.createNotification(connection, {
         userId: current.technician_id,
         type: "TICKET_UNASSIGNED",
-        title: "Repair ticket reassigned",
-        content: `Repair ticket ${ticket.ticket_code} was reassigned to another technician.`,
+        title: "Phiếu sửa chữa đã được phân công lại",
+        content: `Phiếu sửa chữa ${ticket.ticket_code} đã được chuyển cho kỹ thuật viên khác.`,
         ticketId,
       });
       await this.repository.createNotification(connection, {
         userId: technician.id,
         type: "TICKET_ASSIGNED",
-        title: "New repair ticket assignment",
-        content: `You were assigned repair ticket ${ticket.ticket_code}.`,
+        title: "Phân công phiếu sửa chữa mới",
+        content: `Bạn đã được phân công xử lý phiếu sửa chữa ${ticket.ticket_code}.`,
         ticketId,
       });
       await this.auditLogs.create(connection, {

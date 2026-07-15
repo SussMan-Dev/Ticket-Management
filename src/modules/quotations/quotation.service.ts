@@ -323,8 +323,8 @@ export class QuotationService {
       await this.repository.createNotification(connection, {
         userId: ticket.customer_id,
         type: "QUOTATION_SENT",
-        title: "Quotation awaiting your response",
-        content: `Quotation version ${current.version} for repair ticket ${ticket.ticket_code} is ready for review.`,
+        title: "Báo giá đang chờ phản hồi",
+        content: `Báo giá phiên bản ${current.version} của phiếu sửa chữa ${ticket.ticket_code} đã sẵn sàng để bạn xem xét.`,
         ticketId: ticket.id,
       });
       await this.auditStatusChange(
@@ -448,8 +448,12 @@ export class QuotationService {
         connection,
         ticket,
         `QUOTATION_${responseStatus}`,
-        `Quotation ${responseStatus.toLowerCase()}`,
-        `The customer ${responseStatus.toLowerCase()} quotation version ${current.version} for repair ticket ${ticket.ticket_code}.`,
+        responseStatus === "ACCEPTED"
+          ? "Báo giá đã được chấp nhận"
+          : "Báo giá đã bị từ chối",
+        responseStatus === "ACCEPTED"
+          ? `Khách hàng đã chấp nhận báo giá phiên bản ${current.version} của phiếu sửa chữa ${ticket.ticket_code}.`
+          : `Khách hàng đã từ chối báo giá phiên bản ${current.version} của phiếu sửa chữa ${ticket.ticket_code}.`,
       );
       await this.auditStatusChange(
         connection,
@@ -496,8 +500,8 @@ export class QuotationService {
       connection,
       ticket,
       "QUOTATION_EXPIRED",
-      "Quotation expired",
-      `Quotation version ${quotation.version} for repair ticket ${ticket.ticket_code} expired.`,
+      "Báo giá đã hết hạn",
+      `Báo giá phiên bản ${quotation.version} của phiếu sửa chữa ${ticket.ticket_code} đã hết hạn.`,
     );
     await this.auditStatusChange(
       connection,

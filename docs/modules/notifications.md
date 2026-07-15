@@ -24,6 +24,8 @@ Every authenticated role may access only notifications whose `user_id` matches i
 
 List pagination and optional `isRead` filter are validated. Marking an already-read notification is idempotent. Cross-recipient IDs return not found rather than revealing existence.
 
+All workflow notification titles and content are written in Vietnamese. Known legacy English notification templates are translated while serializing API responses so existing recipients also receive a consistent Vietnamese experience.
+
 ## Database tables
 
 `notifications`; event producers may share their owning transaction with ticket, assignment, quotation, payment, delivery, or audit tables.

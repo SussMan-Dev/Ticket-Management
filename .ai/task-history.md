@@ -1,5 +1,20 @@
 # Task History
 
+## 2026-07-15 — Vietnamese workflow notifications
+
+Completed:
+
+- Localized durable notification titles and content across assignment, diagnosis, quotation, inventory, repair/testing, payment, delivery, and ticket-closure workflows.
+- Localized notification API response messages and the recipient-scoped missing-notification error while preserving stable machine-readable codes.
+- Added response-time localization for all known legacy English notification templates so existing stored history is shown consistently in Vietnamese without rewriting database rows.
+- Updated Notifications module documentation and added regression coverage for legacy localization.
+
+Verification:
+
+- Backend typecheck/build passed; all 205 backend tests passed.
+- All 51 targeted notification and notification-producing workflow tests passed.
+- No package or database migration was required.
+
 ## 2026-07-15 — Ticket repair address and local repair-photo upload
 
 Completed:

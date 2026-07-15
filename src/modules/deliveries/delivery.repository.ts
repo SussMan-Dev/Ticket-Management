@@ -109,9 +109,9 @@ export class DeliveryRepository {
       `
         INSERT INTO notifications (
           user_id, type, title, content, reference_type, reference_id
-        ) VALUES (?, 'DEVICE_DELIVERED', 'Device delivered', ?, 'REPAIR_TICKET', ?)
+        ) VALUES (?, 'DEVICE_DELIVERED', 'Thiết bị đã được bàn giao', ?, 'REPAIR_TICKET', ?)
       `,
-      [customerId, `Device handover for ticket ${ticketCode} was recorded.`, ticketId],
+      [customerId, `Việc bàn giao thiết bị của phiếu sửa chữa ${ticketCode} đã được ghi nhận.`, ticketId],
     );
   }
 
@@ -125,9 +125,9 @@ export class DeliveryRepository {
       `
         INSERT INTO notifications (
           user_id, type, title, content, reference_type, reference_id
-        ) VALUES (?, 'TICKET_CLOSED', 'Repair ticket closed', ?, 'REPAIR_TICKET', ?)
+        ) VALUES (?, 'TICKET_CLOSED', 'Phiếu sửa chữa đã được đóng', ?, 'REPAIR_TICKET', ?)
       `,
-      [customerId, `Repair ticket ${ticketCode} has been closed after delivery.`, ticketId],
+      [customerId, `Phiếu sửa chữa ${ticketCode} đã được đóng sau khi bàn giao.`, ticketId],
     );
   }
 }

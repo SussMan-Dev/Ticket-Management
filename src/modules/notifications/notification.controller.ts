@@ -24,7 +24,7 @@ export const notificationController = {
       query as ListNotificationsQuery,
     );
     return sendSuccess(response, {
-      message: "Notifications retrieved successfully",
+      message: "Lấy danh sách thông báo thành công",
       data: result.notifications,
       meta: createPaginationMeta(query.page, query.limit, result.total),
     });
@@ -32,7 +32,7 @@ export const notificationController = {
 
   async unreadCount(request: Request, response: Response): Promise<Response> {
     return sendSuccess(response, {
-      message: "Unread notification count retrieved successfully",
+      message: "Lấy số thông báo chưa đọc thành công",
       data: { count: await notificationService.unreadCount(actor(request)) },
     });
   },
@@ -40,16 +40,15 @@ export const notificationController = {
   async markRead(request: Request, response: Response): Promise<Response> {
     const { id } = request.validated?.params as NotificationIdParams;
     return sendSuccess(response, {
-      message: "Notification marked as read",
+      message: "Đã đánh dấu thông báo là đã đọc",
       data: await notificationService.markRead(actor(request), id),
     });
   },
 
   async markAllRead(request: Request, response: Response): Promise<Response> {
     return sendSuccess(response, {
-      message: "All notifications marked as read",
+      message: "Đã đánh dấu tất cả thông báo là đã đọc",
       data: { updated: await notificationService.markAllRead(actor(request)) },
     });
   },
 };
-

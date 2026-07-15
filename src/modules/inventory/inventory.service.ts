@@ -141,8 +141,8 @@ export class InventoryService {
         await this.repository.createNotification(connection, {
           userId,
           type: "PART_REQUEST_CREATED",
-          title: "Part request awaiting review",
-          content: `Part request ${requestId} for repair ticket ${ticket.ticket_code} is awaiting review.`,
+          title: "Yêu cầu linh kiện đang chờ duyệt",
+          content: `Yêu cầu linh kiện ${requestId} của phiếu sửa chữa ${ticket.ticket_code} đang chờ xét duyệt.`,
           ticketId,
         });
       }
@@ -189,8 +189,8 @@ export class InventoryService {
         current,
         ticket,
         "PART_REQUEST_APPROVED",
-        "Part request approved",
-        `Part request ${requestId} for repair ticket ${ticket.ticket_code} was approved.`,
+        "Yêu cầu linh kiện đã được phê duyệt",
+        `Yêu cầu linh kiện ${requestId} của phiếu sửa chữa ${ticket.ticket_code} đã được phê duyệt.`,
       );
       await this.auditStatusChange(
         connection,
@@ -230,8 +230,8 @@ export class InventoryService {
         current,
         ticket,
         "PART_REQUEST_REJECTED",
-        "Part request rejected",
-        `Part request ${requestId} for repair ticket ${ticket.ticket_code} was rejected.`,
+        "Yêu cầu linh kiện đã bị từ chối",
+        `Yêu cầu linh kiện ${requestId} của phiếu sửa chữa ${ticket.ticket_code} đã bị từ chối.`,
       );
       await this.auditStatusChange(
         connection,
@@ -365,8 +365,12 @@ export class InventoryService {
         current,
         ticket,
         isFullyFulfilled ? "PART_REQUEST_FULFILLED" : "PART_REQUEST_PARTIAL",
-        isFullyFulfilled ? "Part request fulfilled" : "Part request partially fulfilled",
-        `Part request ${requestId} for repair ticket ${ticket.ticket_code} was ${isFullyFulfilled ? "fulfilled" : "partially fulfilled"}.`,
+        isFullyFulfilled
+          ? "Yêu cầu linh kiện đã được cấp đủ"
+          : "Yêu cầu linh kiện đã được cấp một phần",
+        isFullyFulfilled
+          ? `Yêu cầu linh kiện ${requestId} của phiếu sửa chữa ${ticket.ticket_code} đã được cấp đủ.`
+          : `Yêu cầu linh kiện ${requestId} của phiếu sửa chữa ${ticket.ticket_code} đã được cấp một phần.`,
       );
       await this.auditStatusChange(
         connection,

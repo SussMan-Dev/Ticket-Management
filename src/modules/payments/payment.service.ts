@@ -164,8 +164,8 @@ export class PaymentService {
       }
       await this.repository.createNotification(connection, {
         customerId: ticket.customer_id,
-        title: "Invoice issued",
-        content: `Invoice ${invoiceCode} has been issued for ticket ${ticket.ticket_code}.`,
+        title: "Hóa đơn đã được phát hành",
+        content: `Hóa đơn ${invoiceCode} đã được phát hành cho phiếu sửa chữa ${ticket.ticket_code}.`,
         invoiceId,
       });
       await this.auditLogs.create(connection, {
@@ -260,8 +260,8 @@ export class PaymentService {
       }
       await this.repository.createNotification(connection, {
         customerId: invoice.customer_id,
-        title: status === "PAID" ? "Invoice paid" : "Payment received",
-        content: `${paymentCode} for invoice ${invoice.invoice_code} was recorded successfully.`,
+        title: status === "PAID" ? "Hóa đơn đã được thanh toán" : "Đã nhận thanh toán",
+        content: `Khoản thanh toán ${paymentCode} cho hóa đơn ${invoice.invoice_code} đã được ghi nhận thành công.`,
         invoiceId,
       });
       await this.auditLogs.create(connection, {
@@ -348,8 +348,8 @@ export class PaymentService {
       }
       await this.repository.createNotification(connection, {
         customerId: invoice.customer_id,
-        title: "Payment refunded",
-        content: `Payment ${payment.payment_code} for invoice ${invoice.invoice_code} was refunded.`,
+        title: "Khoản thanh toán đã được hoàn tiền",
+        content: `Khoản thanh toán ${payment.payment_code} cho hóa đơn ${invoice.invoice_code} đã được hoàn tiền.`,
         invoiceId: invoice.id,
       });
       await this.auditLogs.create(connection, {
