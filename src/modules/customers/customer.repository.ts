@@ -83,7 +83,9 @@ export class CustomerRepository {
     const sortDirection = query.sortOrder === "asc" ? "ASC" : "DESC";
     const offset = (query.page - 1) * query.limit;
 
-    const [rows] = await pool.execute<CustomerRow[]>(
+    // LIMIT/OFFSET placeholders are incompatible with prepared statements on
+    // some supported MySQL deployments; query() still escapes all parameters.
+    const [rows] = await pool.query<CustomerRow[]>(
       `
         SELECT ${customerColumns}
         FROM users AS u

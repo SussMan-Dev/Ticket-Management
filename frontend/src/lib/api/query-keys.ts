@@ -1,0 +1,17 @@
+export const queryKeys = {
+  session: ["session"] as const,
+  users: (params?: unknown) => ["users", params] as const,
+  user: (id: number) => ["users", id] as const,
+  customers: (params?: unknown) => ["customers", params] as const,
+  customer: (id: number) => ["customers", id] as const,
+  devices: (params?: unknown) => ["devices", params] as const,
+  device: (id: number) => ["devices", id] as const,
+  deviceCatalogs: ["device-catalogs"] as const,
+  tickets: (params?: unknown) => ["repair-tickets", params] as const,
+  ticket: (id: number) => ["repair-tickets", id] as const,
+  ticketHistory: (id: number) => ["repair-tickets", id, "status-history"] as const,
+  ticketAttachments: (id: number) => ["repair-tickets", id, "attachments"] as const,
+  diagnoses: (ticketId: number) => ["repair-tickets", ticketId, "diagnoses"] as const,
+  quotations: (ticketId: number) => ["repair-tickets", ticketId, "quotations"] as const,
+  quotation: (id: number) => ["quotations", id] as const,
+};

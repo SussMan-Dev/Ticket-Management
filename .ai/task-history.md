@@ -1,5 +1,116 @@
 # Task History
 
+## 2026-07-15 — MySQL pagination prepared-statement compatibility fix
+
+Completed:
+
+- Diagnosed the real `/api/v1/users` failure from the running backend stack trace at `UserRepository.list`.
+- Replaced prepared-statement execution only for paginated list SELECTs in Users, Customers, Devices, and Repair Tickets with parameterized mysql2 text-protocol queries.
+- Preserved placeholder escaping, repository-only SQL, bounded pagination, sort whitelists, API contracts, and authorization behavior.
+- Verified all four list repositories against real MySQL, then passed TypeScript typecheck and all 100 backend tests.
+
+Changed files:
+
+- `src/modules/users/user.repository.ts`
+- `src/modules/customers/customer.repository.ts`
+- `src/modules/devices/device.repository.ts`
+- `src/modules/repair-tickets/repair-ticket.repository.ts`
+- `.ai/current-task.md`
+- `.ai/task-history.md`
+
+Database changes:
+
+- None.
+
+API changes:
+
+- None; paginated list endpoints now execute successfully on the configured MySQL deployment.
+
+Important decisions:
+
+- The compatibility change is limited to SELECTs containing bound `LIMIT/OFFSET`; other prepared statements remain on `execute`.
+- `query` continues to escape every placeholder through mysql2, so filter and pagination values are not interpolated manually.
+
+## 2026-07-15 — Production frontend milestone (Phases 1–5 + Phase 6 adapter)
+
+Completed:
+
+- Created a standalone strict React/Vite application under `frontend/` with feature-based architecture, responsive design system, accessibility states, Vietnamese UI, role guards, and role-specific navigation.
+- Implemented in-memory access-token handling, HttpOnly refresh-cookie transport, session restoration, single-flight refresh, one-time retry, typed envelopes, centralized query keys, and cache invalidation.
+- Integrated implemented Auth, Users, Customers, Devices, Repair Tickets, Assignments, and Diagnoses APIs from actual backend schema/DTO/controller contracts.
+- Added quotation history/detail/DRAFT/action UI through an isolated in-memory mock gateway because Phase 6 backend source files do not exist.
+- Added 17 frontend tests covering auth transport, refresh concurrency, errors, route/role behavior, customer ownership UI, assignment/diagnosis rules, quotation states/expiry/supersession, invalidation, and 409/422 handling.
+- Added frontend setup/security/role/API documentation and verified lint, strict typecheck, tests, dependency audit, and a route-split production build.
+
+Changed files:
+
+- Added the complete `frontend/` application, configuration, tests, lockfile, environment example, and README.
+- Updated `.ai/project-context.md`, `.ai/code-map.md`, `.ai/current-task.md`, and `.ai/task-history.md`.
+
+Database changes:
+
+- None.
+
+API changes:
+
+- None. The frontend consumes existing Phase 1–5 APIs; quotation API integration remains intentionally absent.
+
+Important decisions:
+
+- Access tokens remain only in memory; refresh tokens remain browser-inaccessible HttpOnly cookies.
+- Admin has account/configuration navigation only. Customer resource IDs are not used as authorization evidence.
+- Phase 6 quotation fields and endpoints are not inferred. The mock gateway is visibly labeled and replaceable after actual backend DTOs exist.
+- Missing manager technician lookup and Phase 7 parts catalog APIs are documented rather than fabricated.
+
+Remaining:
+
+- Implement backend Phase 6 and bind the quotation gateway to its actual server-calculated contract.
+- Add manager-authorized technician lookup and Phase 7 part catalog integrations when those endpoints are defined.
+
+## 2026-07-15 — Phase 5 assignments and diagnoses
+
+Completed:
+
+- Implemented manager-only atomic ticket assignment/reassignment with one active assignment, active/unlocked technician validation, immutable assignment history, technician notifications, and assignment audit events.
+- Implemented diagnosis list/create/edit/submit/revision/approval with active-assigned-author checks, one open diagnosis, active requested parts, immutable submitted content, and manager review.
+- Integrated `RECEIVED → ASSIGNED → DIAGNOSING → WAITING_FOR_QUOTATION` and diagnosis revision transitions with ticket row locks and immutable status history.
+- Added approved-only customer-safe diagnosis serialization that excludes root cause, internal risk/part notes, and staff identity.
+- Added Phase 5 service/API tests and synchronized API, workflow, authorization, database, module, README, and AI-context documentation.
+
+Changed files:
+
+- Added standard seven-file modules under `src/modules/ticket-assignments/` and `src/modules/diagnoses/`.
+- Updated API route composition, added four Phase 5 test files, and updated affected documentation/maps/status files.
+
+Database changes:
+
+- No schema migration was required.
+- Verified real assignment, reassignment, status-history, diagnosis-part lifecycle, notification, and audit repository operations inside one rolled-back development MySQL transaction.
+
+API changes:
+
+- Added `POST /api/v1/repair-tickets/:id/assign` and `/reassign`.
+- Added `GET/POST /api/v1/repair-tickets/:ticketId/diagnoses`.
+- Added `PATCH /api/v1/diagnoses/:id` plus `/submit`, `/request-revision`, and `/approve` actions.
+
+Important decisions:
+
+- Assignment and diagnosis transitions remain unavailable through the generic status endpoint and run only in their owning transactional services.
+- Phase 5 reassignment is limited to `ASSIGNED` tickets so a diagnosis cannot be stranded after its active author changes.
+- Diagnosis submission moves the ticket to `WAITING_FOR_QUOTATION`; approval finalizes the diagnosis without manufacturing a same-status ticket history row.
+- Customer diagnosis reads are approved-only and deliberately omit internal technical/staff fields.
+
+Verification:
+
+- TypeScript typecheck and production build passed.
+- All 100 tests passed, including 20 new Phase 5 service/API tests.
+- SQL location review found application SQL only in repository files.
+- Real repository transaction and row-lock flow passed and rolled back without retaining test records.
+
+Remaining:
+
+- Phase 6 versioned quotations, price snapshots, manager approval/sending, expiry, and owner-only customer response.
+
 ## 2026-07-14 — Phase 4 repair tickets
 
 Completed:

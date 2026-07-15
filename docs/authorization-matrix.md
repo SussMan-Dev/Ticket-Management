@@ -18,4 +18,4 @@ Legend: `Own` means only resources owned by the user; `Assigned` means an active
 
 Every endpoint first authenticates a signed access token, then checks its role, then the service checks ownership/assignment and current resource state. Client-supplied roles are ignored.
 
-Phases 2 through 4 enforce this matrix for Auth, Users, Customers, Devices, and Repair Tickets. Ticket routes authenticate and check role in middleware; services then enforce customer ownership or active technician assignment. Admin remains account/configuration-only and cannot use operational ticket endpoints.
+Phases 2 through 5 enforce this matrix for Auth, Users, Customers, Devices, Repair Tickets, Assignments, and Diagnoses. Routes authenticate and check roles in middleware; services then enforce customer ownership, active technician assignment, diagnosis authorship, current state, and manager-only reviews. Admin remains account/configuration-only and cannot use operational ticket endpoints.

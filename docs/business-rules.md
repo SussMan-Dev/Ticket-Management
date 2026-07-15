@@ -32,14 +32,16 @@
 - Ticket codes are unique and use the form `RT-YYYY-NNNNNN`.
 - Terminal states are `CLOSED` and `CANCELLED`; history is never deleted.
 - Customers may edit/cancel only their own `NEW` ticket and cannot set priority, expected dates, or received state. Technicians see only tickets with an active assignment.
-- Phase 4 permits direct receive, cancellation, and manager hold/resume only. Transitions owned by later workflow modules cannot be invoked early through the generic status endpoint.
+- Repair Tickets permits direct receive, cancellation, and manager hold/resume between `RECEIVED` and `ON_HOLD`. Phase 5 assignment/diagnosis transitions run only through their owning services; later workflow transitions cannot be invoked early through the generic status endpoint.
 - Ticket attachments store validated HTTP(S) metadata. Type permissions are role-specific, and no attachment may be added to a terminal ticket.
 
 ## Assignments and diagnosis
 
 - A ticket has at most one active assignment. Reassignment closes the old assignment and creates a new record atomically.
-- Locked technicians cannot receive new work.
-- Only the active technician writes a diagnosis. Submitted diagnoses require manager approval or revision.
+- Inactive, administratively locked, temporarily locked, deleted, and non-technician users cannot receive work.
+- Phase 5 reassignment is limited to `ASSIGNED` tickets so an existing authored diagnosis cannot be stranded during handoff.
+- Only the active assigned diagnosis author writes or submits a diagnosis. Submitted diagnoses are immutable until a manager requests revision; manager approval is audited.
+- Requested diagnosis parts must be active and use positive, unique quantities. Customer reads include approved diagnoses only and omit internal root-cause, risk-note, staff-identity, and part-note fields.
 
 ## Quotations
 

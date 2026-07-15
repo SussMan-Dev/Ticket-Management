@@ -1,5 +1,17 @@
 # Code Map
 
+## Frontend Application
+
+Purpose: standalone browser UI for implemented Auth through Diagnosis workflows, plus an isolated Phase 6 quotation adapter boundary.
+
+Main files: `frontend/src/app/`, `frontend/src/features/`, `frontend/src/lib/api/`, `frontend/src/lib/auth/`, `frontend/src/layouts/`, `frontend/src/routes/`, and `frontend/src/components/ui/`.
+
+Configuration and docs: `frontend/package.json`, `frontend/vite.config.ts`, `frontend/eslint.config.js`, `frontend/.env.example`, and `frontend/README.md`.
+
+Read when: changing browser authentication, role navigation, feature pages, frontend API DTOs/hooks, forms, quotation adapter integration, responsive styling, or frontend tests.
+
+Important rules: access tokens stay in memory; refresh uses the HttpOnly cookie; UI role visibility never replaces backend authorization; components do not call `fetch`; Phase 6 remains mock-only until actual backend quotation DTOs exist.
+
 ## Foundation
 
 Purpose: runtime configuration, HTTP composition, common contracts, database lifecycle, error handling, validation, logging, and transaction boundaries.
@@ -86,7 +98,7 @@ Important rules: customers access only owned tickets; technicians require an act
 
 Purpose: assign/reassign technicians and retain assignment history/workload.
 
-Main files: `src/modules/ticket-assignments/ticket-assignment.route.ts`, `ticket-assignment.controller.ts`, `ticket-assignment.service.ts`, `ticket-assignment.repository.ts`, `ticket-assignment.model.ts`, `ticket-assignment.schema.ts`, `ticket-assignment.dto.ts` (planned Phase 5).
+Main files: `src/modules/ticket-assignments/ticket-assignment.route.ts`, `ticket-assignment.controller.ts`, `ticket-assignment.service.ts`, `ticket-assignment.repository.ts`, `ticket-assignment.model.ts`, `ticket-assignment.schema.ts`, `ticket-assignment.dto.ts` (implemented Phase 5).
 
 Tables: `ticket_assignments`, `repair_tickets`, `ticket_status_history`, `users`.
 
@@ -94,13 +106,13 @@ Dependencies: repair tickets, users, notifications.
 
 Read when: assignment, technician authorization, or workload changes.
 
-Important rules: at most one active assignment; close old then create new atomically; technician must be active.
+Important rules: at most one active assignment under a ticket row lock; close old then create new atomically; technician must be active, unlocked, and have the technician role; Phase 5 reassignment is limited to `ASSIGNED` tickets; assignment notifications and audit records share the transaction.
 
 ## Diagnoses Module
 
 Purpose: findings, proposed repair, labor/risk, requested parts, submit/revision/approval.
 
-Main files: `src/modules/diagnoses/diagnosis.route.ts`, `diagnosis.controller.ts`, `diagnosis.service.ts`, `diagnosis.repository.ts`, `diagnosis.model.ts`, `diagnosis.schema.ts`, `diagnosis.dto.ts` (planned Phase 5).
+Main files: `src/modules/diagnoses/diagnosis.route.ts`, `diagnosis.controller.ts`, `diagnosis.service.ts`, `diagnosis.repository.ts`, `diagnosis.model.ts`, `diagnosis.schema.ts`, `diagnosis.dto.ts` (implemented Phase 5).
 
 Tables: `diagnoses`, `diagnosis_parts`.
 
@@ -108,7 +120,7 @@ Dependencies: assignments, repair tickets, parts, quotations.
 
 Read when: diagnosis workflow or technician constraints change.
 
-Important rules: active assignee writes; manager approves; submission/approval and ticket transition are atomic.
+Important rules: active assigned author writes; one open diagnosis per ticket; active unique requested parts; submitted content is immutable until revision; manager revision/approval is audited; customer reads approved safe fields only; owning ticket transitions, history, and notifications are atomic.
 
 ## Quotations Module
 

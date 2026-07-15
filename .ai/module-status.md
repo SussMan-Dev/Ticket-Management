@@ -8,13 +8,13 @@
 | Customers | Completed | Yes | Completed | Phase 3 profile ownership and staff intake APIs |
 | Devices | Completed | Yes | Completed | Phase 3 owned CRUD, soft delete, and active catalog reads |
 | Repair Tickets | Completed | Yes | Completed | Phase 4 intake CRUD, ownership, history, attachments |
-| Assignments | Not started | No | Completed | Next: Phase 5; must reuse Phase 4 locks/history |
-| Diagnoses | Not started | No | Completed | Next: Phase 5; active-assignee workflow |
+| Assignments | Completed | Yes | Completed | Phase 5 atomic assignment/reassignment, notification, audit |
+| Diagnoses | Completed | Yes | Completed | Phase 5 active-author diagnosis/revision/approval workflow |
 | Quotations | Not started | No | Completed | Phase 6 |
 | Parts/Inventory | Not started | No | Completed | Phase 7 |
 | Repair Actions/Testing | Not started | No | Completed | Phase 8 |
 | Payments/Invoices | Not started | No | Completed | Phase 9 |
 | Deliveries | Not started | No | Completed | Phase 10 |
 | Reviews | Not started | No | Completed | Phase 10 |
-| Notifications | Not started | No | Partial | Table and code-map contract documented |
+| Notifications | Partial | Indirect | Partial | Phase 5 event writes implemented; recipient read APIs remain deferred |
 | Reports | Not started | No | Completed | Phase 10 |

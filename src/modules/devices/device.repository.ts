@@ -74,7 +74,9 @@ export class DeviceRepository {
     const sortDirection = query.sortOrder === "asc" ? "ASC" : "DESC";
     const offset = (query.page - 1) * query.limit;
 
-    const [rows] = await pool.execute<DeviceRow[]>(
+    // LIMIT/OFFSET placeholders are incompatible with prepared statements on
+    // some supported MySQL deployments; query() still escapes all parameters.
+    const [rows] = await pool.query<DeviceRow[]>(
       `
         SELECT ${deviceColumns}
         FROM devices AS d

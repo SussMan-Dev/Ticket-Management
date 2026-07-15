@@ -1,6 +1,6 @@
 # API Map
 
-Base URL: `/api/v1`. Phases 1 through 4 are implemented. Endpoints from later phases remain planned unless their section says otherwise.
+Base URL: `/api/v1`. Phases 1 through 5 are implemented. Endpoints from later phases remain planned unless their section says otherwise.
 
 ## Health
 
@@ -98,8 +98,8 @@ Controller/service/repository: `repairTicketController`, `repairTicketService`, 
 | `POST /repair-tickets` | CUSTOMER, RECEPTIONIST, MANAGER | Yes | 4 |
 | `PATCH /repair-tickets/:id` | Owner for allowed NEW fields; RECEPTIONIST/MANAGER by state | Yes | 4 |
 | `POST /repair-tickets/:id/receive` | RECEPTIONIST | Yes | 4 |
-| `POST /repair-tickets/:id/assign` | MANAGER | Yes | 5 |
-| `POST /repair-tickets/:id/reassign` | MANAGER | Yes | 5 |
+| `POST /repair-tickets/:id/assign` | MANAGER | Yes | 5 (implemented) |
+| `POST /repair-tickets/:id/reassign` | MANAGER | Yes | 5 (implemented) |
 | `POST /repair-tickets/:id/change-status` | MANAGER hold/resume in Phase 4; owning workflow role later | Yes | 4+ |
 | `POST /repair-tickets/:id/cancel` | Owner in allowed state, MANAGER | Yes | 4 |
 | `GET /repair-tickets/:id/status-history` | Same visibility as ticket | No | 4 |
@@ -109,9 +109,11 @@ Controller/service/repository: `repairTicketController`, `repairTicketService`, 
 
 Request notes: list supports bounded pagination, search, status/priority/customer/device filters, and whitelisted sorting. Customers are always owner-scoped; technicians are always active-assignment-scoped. Staff creation requires `customerId`; only a receptionist may set `receiveNow=true`. Attachment URLs must use HTTP(S), and filename/MIME metadata is validated.
 
-Rules: customer device ownership; active customer/device/category for creation; unique `RT-YYYY-NNNNNN` code; validated transition map; actor-specific permission; lock current row and append history atomically; technicians require active assignment. Phase 4 manager status changes are limited to `RECEIVED <-> ON_HOLD`; assignment/diagnosis/quotation/repair/payment/delivery transitions cannot be bypassed through the generic endpoint.
+Rules: customer device ownership; active customer/device/category for creation; unique `RT-YYYY-NNNNNN` code; validated transition map; actor-specific permission; lock current row and append history atomically; technicians require active assignment. Manager status changes remain limited to `RECEIVED <-> ON_HOLD`; implemented assignment/diagnosis and future quotation/repair/payment/delivery transitions cannot be bypassed through the generic endpoint.
 
 ## Diagnoses
+
+Status: implemented in Phase 5 with assignment/author scoping, active requested-part validation, ticket row locks/history, durable notifications, approval audit, and approved-only customer-safe serialization.
 
 Controller/service/repository: `diagnosisController`, `diagnosisService`, `diagnosisRepository`. Tables: `diagnoses`, `diagnosis_parts`, `ticket_assignments`, `repair_tickets`, `ticket_status_history`.
 
@@ -124,7 +126,7 @@ Controller/service/repository: `diagnosisController`, `diagnosisService`, `diagn
 | `POST /diagnoses/:id/request-revision` | MANAGER | Yes | 5 |
 | `POST /diagnoses/:id/approve` | MANAGER | Yes | 5 |
 
-Rules: active assignment; state-bound editing; non-negative costs/quantities; submit/approve plus ticket history is atomic; customer sees only approved safe fields.
+Rules: active assigned author; one open diagnosis per ticket; state-bound editing; non-negative costs and positive unique part quantities; create/submit/revision own the matching ticket transition and history atomically; approval remains at `WAITING_FOR_QUOTATION`; customer sees approved safe fields only.
 
 ## Quotations
 

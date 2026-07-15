@@ -21,17 +21,46 @@ Base URL: `/api/v1`. JSON success responses contain `success`, `message`, `data`
 | PATCH | `/api/v1/users/:id` | Self or ADMIN | Update safe profile fields |
 | PATCH | `/api/v1/users/:id/status` | ADMIN | Change status and revoke sessions |
 | PATCH | `/api/v1/users/:id/role` | ADMIN | Change role and revoke sessions |
+| GET | `/api/v1/customers` | RECEPTIONIST, MANAGER | Paginated customer lookup |
+| GET | `/api/v1/customers/:id` | Own CUSTOMER, RECEPTIONIST, MANAGER | Customer profile detail |
+| POST | `/api/v1/customers` | RECEPTIONIST, MANAGER | Create customer/profile atomically |
+| PATCH | `/api/v1/customers/:id` | Own CUSTOMER, RECEPTIONIST, MANAGER | Update allowed profile fields |
+| GET | `/api/v1/customers/:id/tickets` | Own CUSTOMER, RECEPTIONIST, MANAGER | Customer ticket collection |
+| GET | `/api/v1/customers/:id/devices` | Own CUSTOMER, RECEPTIONIST, MANAGER | Customer device collection |
+| GET | `/api/v1/devices` | CUSTOMER own, RECEPTIONIST, MANAGER | Scoped device list |
+| GET | `/api/v1/devices/categories` | CUSTOMER, RECEPTIONIST, MANAGER | Active device categories |
+| GET | `/api/v1/devices/brands` | CUSTOMER, RECEPTIONIST, MANAGER | Active device brands |
+| GET | `/api/v1/devices/:id` | Owner, RECEPTIONIST, MANAGER | Device detail |
+| POST | `/api/v1/devices` | CUSTOMER own, RECEPTIONIST, MANAGER | Create device |
+| PATCH | `/api/v1/devices/:id` | Owner, RECEPTIONIST, MANAGER | Update device |
+| DELETE | `/api/v1/devices/:id` | Owner, RECEPTIONIST, MANAGER | Soft-delete device |
+| GET | `/api/v1/repair-tickets` | CUSTOMER own, assigned TECHNICIAN, operational staff | Scoped ticket list |
+| POST | `/api/v1/repair-tickets` | CUSTOMER, RECEPTIONIST, MANAGER | Create ticket/intake |
+| GET | `/api/v1/repair-tickets/:id` | Owner, assigned TECHNICIAN, operational staff | Ticket detail |
+| PATCH | `/api/v1/repair-tickets/:id` | Owner/state-bound staff | Update allowed intake fields |
+| POST | `/api/v1/repair-tickets/:id/receive` | RECEPTIONIST | Receive a new ticket |
+| POST | `/api/v1/repair-tickets/:id/change-status` | MANAGER | Configured hold/resume only |
+| POST | `/api/v1/repair-tickets/:id/cancel` | Eligible owner, MANAGER | Cancel in an allowed state |
+| GET | `/api/v1/repair-tickets/:id/status-history` | Same visibility as ticket | Immutable status history |
+| GET | `/api/v1/repair-tickets/:id/attachments` | Same visibility as ticket | Attachment metadata |
+| POST | `/api/v1/repair-tickets/:id/attachments` | Role/type/state scoped | Create attachment metadata |
+| POST | `/api/v1/repair-tickets/:id/assign` | MANAGER | Assign an active technician atomically |
+| POST | `/api/v1/repair-tickets/:id/reassign` | MANAGER | Replace the active assignment atomically |
+| GET | `/api/v1/repair-tickets/:ticketId/diagnoses` | Owner approved-only, assigned TECHNICIAN, MANAGER | Scoped diagnosis list |
+| POST | `/api/v1/repair-tickets/:ticketId/diagnoses` | Assigned TECHNICIAN | Create a diagnosis draft |
+| PATCH | `/api/v1/diagnoses/:id` | Assigned diagnosis author | Edit a draft/revision diagnosis |
+| POST | `/api/v1/diagnoses/:id/submit` | Assigned diagnosis author | Submit diagnosis for review |
+| POST | `/api/v1/diagnoses/:id/request-revision` | MANAGER | Return diagnosis for revision |
+| POST | `/api/v1/diagnoses/:id/approve` | MANAGER | Approve submitted diagnosis |
 
-## Planned endpoint groups
+## Remaining endpoint groups
 
-- Customers and devices: profiles, device ownership, categories, brands, and device CRUD.
-- Repair tickets: create, list, detail, receive, assign, reassign, transition, cancel, history, and timeline.
-- Diagnoses and quotations: versioned diagnosis/quotation workflows and customer response.
+- Quotations: versioned quotation workflows and customer response.
 - Inventory and repair: parts, stock movement, part requests, repair logs, and test results.
 - Billing and delivery: invoices, partial payments, refunds, handover, and reviews.
 - Reports: dashboard, revenue, repair time, technician performance, parts usage, and low stock.
 
-Auth and Users were mounted in Phase 2. Remaining groups are planned; `.ai/api-map.md` records their exact future paths and implementation state.
+Phases 1 through 5 are mounted. `.ai/api-map.md` records exact role, transaction, request, and future-path details.
 
 ## Authentication transport
 

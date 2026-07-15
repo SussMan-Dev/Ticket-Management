@@ -21,15 +21,15 @@ Every state change locks the ticket, validates its current state, updates the ti
 
 1. Customer or receptionist creates the ticket and records the device condition.
 2. Manager assigns one active technician.
-3. Technician diagnoses; manager approves the diagnosis and quotation.
+3. Technician diagnoses; manager approves the diagnosis, then Phase 6 owns quotation creation and approval.
 4. Customer accepts or rejects the unexpired quotation.
 5. Inventory fulfills parts without allowing negative stock.
 6. Technician records repair logs and test outcomes.
 7. Cashier invoices and records payment.
 8. Receptionist delivers; customer may review after delivery.
 
-`src/common/constants/ticket-status.ts` is the code-level source for transition candidates. The repair-ticket service will add actor and resource checks in Phase 4.
+`src/common/constants/ticket-status.ts` is the code-level source for transition candidates. Each owning service adds actor, resource, and current-state checks before using a candidate.
 
 ## Phase implementation boundaries
 
-Phase 4 now enforces actor/resource checks and implements ticket creation, `NEW -> RECEIVED`, allowed cancellation, and manager hold/resume between `RECEIVED` and `ON_HOLD`. The generic status endpoint rejects transitions owned by assignment, diagnosis, quotation, inventory, repair/testing, payment, and delivery phases even when they are candidates in `ALLOWED_TICKET_TRANSITIONS`. Those modules must perform their transition and required side effects atomically in their respective phases.
+Phase 4 enforces actor/resource checks and implements ticket creation, `NEW → RECEIVED`, allowed cancellation, and manager hold/resume between `RECEIVED` and `ON_HOLD`. Phase 5 adds `RECEIVED → ASSIGNED`, `ASSIGNED → DIAGNOSING`, diagnosis submission to `WAITING_FOR_QUOTATION`, and revision back to `DIAGNOSING` through the owning Assignment/Diagnosis services. The generic status endpoint continues to reject assignment, diagnosis, quotation, inventory, repair/testing, payment, and delivery transitions even when they are candidates in `ALLOWED_TICKET_TRANSITIONS`.

@@ -104,6 +104,7 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Important columns: assigned/unassigned timestamps, `is_active`, note.
 - Important indexes: `(ticket_id, is_active)`, `(technician_id, is_active)`.
 - Owned by: Ticket Assignments.
+- Implementation: Phase 5 serializes writes with a ticket row lock, validates active/unlocked technicians, closes the prior row before reassignment, and writes notifications/audit atomically. Reassignment is currently limited to `ASSIGNED` tickets.
 - Read full schema when: assignment concurrency, workload, or reassignment changes.
 
 ## ticket_status_history
@@ -125,6 +126,7 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Important columns: issue/cause/solution, labor, hours, data-loss risk, status and approval timestamps.
 - Important indexes: ticket; `(technician_id, status)`.
 - Owned by: Diagnoses.
+- Implementation: Phase 5 supports one open draft/submission/revision per ticket, active-assignee authorship, manager approval, and customer-safe approved reads with owning ticket transitions.
 - Read full schema when: diagnosis content, approval, pricing, or risk changes.
 
 ## parts
@@ -145,6 +147,7 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Important columns: `quantity`, note.
 - Important indexes: unique `(diagnosis_id, part_id)`.
 - Owned by: Diagnoses.
+- Implementation: Phase 5 replaces requested parts only while a diagnosis is editable, validates active part references, and keeps the replacement in the diagnosis transaction.
 - Read full schema when: requested-part diagnosis logic changes.
 
 ## quotations

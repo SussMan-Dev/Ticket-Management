@@ -36,3 +36,7 @@ The bootstrap schema represents the current canonical schema. Later changes use 
 ## Phase 2 migration
 
 `002_add_login_security_fields.sql` adds `users.failed_login_attempts`, `users.locked_until`, and an index on the lock timestamp. The same fields are present in the canonical bootstrap schema. The development database was migrated during Phase 2; each other environment must apply the migration exactly once. Administrative `status = LOCKED` remains separate from temporary `locked_until`.
+
+## Phase 5 persistence
+
+Assignments and diagnoses use the existing `ticket_assignments`, `diagnoses`, `diagnosis_parts`, `repair_tickets`, `ticket_status_history`, `notifications`, and `audit_logs` definitions. No Phase 5 migration is required. Ticket row locks serialize assignment/diagnosis workflows; draft diagnosis-part replacement is transactional, while submitted/approved diagnosis content and assignment history are preserved.

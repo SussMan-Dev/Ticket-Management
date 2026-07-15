@@ -14,7 +14,7 @@ Implemented under `src/modules/repair-tickets/` using route, controller, service
 
 ## Public APIs
 
-Implemented in Phase 4: `GET/POST /repair-tickets`, `GET/PATCH /repair-tickets/:id`, `/receive`, `/change-status`, `/cancel`, `/status-history`, and `GET/POST /attachments`. `GET /customers/:id/tickets` is also implemented through this service. Assignment/reassignment remain Phase 5 and the aggregated timeline remains Phase 8.
+Implemented in Phase 4: `GET/POST /repair-tickets`, `GET/PATCH /repair-tickets/:id`, `/receive`, `/change-status`, `/cancel`, `/status-history`, and `GET/POST /attachments`. `GET /customers/:id/tickets` is also implemented through this service. Phase 5 adds assignment/reassignment through the Ticket Assignments module; the aggregated timeline remains Phase 8.
 
 ## Allowed roles
 
@@ -26,7 +26,7 @@ Generate a unique `RT-YYYY-NNNNNN` code from the inserted ticket identity. Creat
 
 ## State transitions
 
-Defined in `src/common/constants/ticket-status.ts` and explained in `docs/ticket-workflow.md`. Phase 4 directly enables `NEW -> RECEIVED`, configured cancellation, and manager `RECEIVED <-> ON_HOLD`; later transitions require their owning modules.
+Defined in `src/common/constants/ticket-status.ts` and explained in `docs/ticket-workflow.md`. Repair Tickets directly enables `NEW → RECEIVED`, configured cancellation, and manager `RECEIVED ↔ ON_HOLD`. Phase 5 owning modules now perform `RECEIVED → ASSIGNED`, `ASSIGNED → DIAGNOSING`, `DIAGNOSING → WAITING_FOR_QUOTATION`, and the diagnosis revision return atomically; later transitions remain unavailable.
 
 ## Database tables
 

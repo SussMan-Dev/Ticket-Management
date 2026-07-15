@@ -2,8 +2,13 @@ import { Router } from "express";
 import { sendSuccess } from "../common/utils/response.util.js";
 import { authRouter } from "../modules/auth/auth.route.js";
 import { customerRouter } from "../modules/customers/customer.route.js";
+import {
+  diagnosisRouter,
+  ticketDiagnosisRouter,
+} from "../modules/diagnoses/diagnosis.route.js";
 import { deviceRouter } from "../modules/devices/device.route.js";
 import { repairTicketRouter } from "../modules/repair-tickets/repair-ticket.route.js";
+import { ticketAssignmentRouter } from "../modules/ticket-assignments/ticket-assignment.route.js";
 import { userRouter } from "../modules/users/user.route.js";
 
 export const apiRouter = Router();
@@ -23,4 +28,7 @@ apiRouter.use("/auth", authRouter);
 apiRouter.use("/users", userRouter);
 apiRouter.use("/customers", customerRouter);
 apiRouter.use("/devices", deviceRouter);
+apiRouter.use("/repair-tickets", ticketAssignmentRouter);
+apiRouter.use("/repair-tickets", ticketDiagnosisRouter);
 apiRouter.use("/repair-tickets", repairTicketRouter);
+apiRouter.use("/diagnoses", diagnosisRouter);

@@ -6,21 +6,22 @@ This file is the short entry point requested by IDE/agent workflows. Detailed, c
 
 - Project: Repair Ticket Management System using Node.js, Express, TypeScript, MySQL 8, `mysql2/promise`, and raw parameterized SQL.
 - Architecture: Route -> Middleware -> Controller -> Service -> Repository -> MySQL.
-- Completed: Phase 1 Foundation, Phase 2 Auth/Users, Phase 3 Customers/Devices, and Phase 4 Repair Tickets.
-- Verified: TypeScript typecheck, production build, 80 tests, repository SQL location, and rolled-back Phase 4 MySQL integration flow.
-- Next: Phase 5 ticket assignment/reassignment and diagnosis workflow.
+- Completed: Phase 1 Foundation, Phase 2 Auth/Users, Phase 3 Customers/Devices, Phase 4 Repair Tickets, and Phase 5 Assignments/Diagnoses.
+- Verified: TypeScript typecheck, production build, 100 tests, repository SQL location, and rolled-back Phase 5 MySQL repository flow.
+- Frontend: standalone React app under `frontend/` integrates Phases 1–5; Phase 6 screens use an isolated mock gateway because backend quotation source is absent.
+- Next: Phase 6 versioned quotation workflow and customer response, followed by binding the frontend quotation gateway to its actual DTOs.
 
-## Phase 4 capabilities
+## Phase 5 capabilities
 
-- Customer-owned and staff/active-assignment scoped ticket retrieval.
-- Ticket creation/update, receptionist receive, manager hold/resume, and customer/manager cancellation.
-- Atomic status transitions with immutable `ticket_status_history`.
-- Validated HTTP(S) attachment metadata with role/type authorization.
-- `GET /customers/:id/tickets` customer collection.
+- Manager-only atomic assignment/reassignment with one active technician, lock/status validation, notifications, and audit.
+- Active assigned-author diagnosis create/edit/submit with validated requested parts.
+- Manager revision/approval with durable notifications and approval audit.
+- Atomic ticket transitions through `ASSIGNED`, `DIAGNOSING`, and `WAITING_FOR_QUOTATION` with immutable status history.
+- Owner-only approved diagnosis reads with internal technical fields removed.
 
 ## Workflow boundary
 
-Phase 4 exposes only `NEW -> RECEIVED`, configured cancellation, and manager `RECEIVED <-> ON_HOLD`. Assignment, diagnosis, quotation, inventory, repair/testing, payment, delivery, closure, and timeline transitions remain owned by later phases.
+Phases 4 and 5 expose intake, assignment, and diagnosis transitions through their owning services. The generic manager endpoint remains restricted to `RECEIVED <-> ON_HOLD`. Quotation, inventory, repair/testing, payment, delivery, closure, and timeline transitions remain owned by later phases.
 
 ## Canonical files
 

@@ -10,23 +10,23 @@ Ticket assignment and active technician workload.
 
 ## Main files
 
-Planned under `src/modules/ticket-assignments/` using the standard seven-file module structure.
+Implemented under `src/modules/ticket-assignments/` using the standard seven-file module structure.
 
 ## Public APIs
 
-Assignment actions are exposed as `POST /repair-tickets/:id/assign` and `/reassign`; technician workload endpoints will be manager-only. Planned for Phase 5.
+Assignment actions are exposed as `POST /repair-tickets/:id/assign` and `/reassign`. Both are implemented in Phase 5. Workload endpoints remain deferred until an explicit API contract is defined.
 
 ## Allowed roles
 
-Managers assign/reassign. Technicians view and accept their active assignments. Other roles may see the current assignee only when their ticket visibility permits it.
+Managers assign/reassign. Technicians receive durable assignment notifications and view assigned tickets through the active-assignment scope already enforced by Repair Tickets.
 
 ## Business rules
 
-Only one active assignment per ticket. Reassignment closes the old row before creating the new row. The technician must have the technician role and an active account.
+Only one active assignment per ticket. Reassignment closes the old row before creating the new row. The technician must have the technician role, an active account, and no current temporary login lock. Phase 5 permits reassignment while the ticket is `ASSIGNED`; later handoff rules must explicitly address diagnosis authorship before widening that boundary.
 
 ## State transitions
 
-Ticket `RECEIVED` → `ASSIGNED`; assignment active → inactive on reassign/closure. Assignment history is immutable.
+Ticket `RECEIVED` → `ASSIGNED`; assignment active → inactive on reassign. Assignment history is immutable. Reassignment does not manufacture a same-status ticket transition.
 
 ## Database tables
 
@@ -34,7 +34,7 @@ Ticket `RECEIVED` → `ASSIGNED`; assignment active → inactive on reassign/clo
 
 ## Transactions
 
-Always required for assignment/reassignment, ticket status/history, notification, and audit changes.
+Always required. Initial assignment writes the assignment, `RECEIVED → ASSIGNED` ticket state/history, technician notification, and audit event atomically. Reassignment closes the prior row, creates the replacement, notifies both technicians, and audits the change atomically.
 
 ## Dependencies
 
@@ -42,7 +42,7 @@ Users, repair tickets, and notifications.
 
 ## Common errors
 
-Ticket not receivable for assignment, inactive technician, technician role mismatch, duplicate active assignment, and concurrent reassignment.
+Ticket not receivable for assignment, inactive/locked technician, technician role mismatch, duplicate active assignment, missing active assignment, same-technician reassignment, and concurrent reassignment.
 
 ## Security considerations
 

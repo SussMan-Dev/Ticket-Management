@@ -89,7 +89,10 @@ export class UserRepository {
     const sortDirection = query.sortOrder === "asc" ? "ASC" : "DESC";
     const offset = (query.page - 1) * query.limit;
 
-    const [rows] = await pool.execute<UserRow[]>(
+    // Use the text protocol for pagination placeholders. Some supported MySQL
+    // deployments reject LIMIT/OFFSET parameters in prepared statements with
+    // ER_WRONG_ARGUMENTS, while mysql2.query still escapes every value.
+    const [rows] = await pool.query<UserRow[]>(
       `
         SELECT ${safeUserColumns}
         FROM users AS u
