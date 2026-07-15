@@ -6,6 +6,7 @@ import { FormField } from "../../components/ui/form-field";
 import type { Quotation } from "../../types/domain";
 import type { QuotationDraftItem } from "./quotation.gateway";
 import { useCreateQuotation, useUpdateQuotation } from "./quotations.api";
+import { useParts } from "../parts/parts.api";
 
 interface Line {
   itemType: "LABOR" | "PART" | "OTHER";
@@ -42,6 +43,15 @@ export function QuotationForm({
   quotation?: Quotation;
   onDone?(): void;
 }) {
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const catalog = useParts({
+    page: 1,
+    limit: 100,
+    search: catalogSearch || undefined,
+    isActive: true,
+    sortBy: "name",
+    sortOrder: "asc",
+  });
   const [expiresAt, setExpiresAt] = useState(
     toLocalDateTimeInput(quotation?.expiresAt),
   );
@@ -138,6 +148,16 @@ export function QuotationForm({
               </Button>
             </div>
           </div>
+          {items.some((item) => item.itemType === "PART") ? (
+            <FormField label="Tìm catalog" htmlFor="quotation-part-search">
+              <input
+                id="quotation-part-search"
+                value={catalogSearch}
+                onChange={(event) => setCatalogSearch(event.target.value)}
+                placeholder="SKU hoặc tên…"
+              />
+            </FormField>
+          ) : null}
           {items.map((item, index) => (
             <div className="quote-line-form" key={`${index}-${item.itemType}`}>
               <FormField label="Loại" htmlFor={`quote-type-${index}`}>
@@ -155,14 +175,22 @@ export function QuotationForm({
                 </select>
               </FormField>
               {item.itemType === "PART" ? (
-                <FormField label="Part ID" htmlFor={`quote-part-${index}`} required>
-                  <input
+                <FormField label="Linh kiện" htmlFor={`quote-part-${index}`} required>
+                  <select
                     id={`quote-part-${index}`}
-                    type="number"
-                    min={1}
                     value={item.partId ?? ""}
                     onChange={(event) => change(index, { partId: Number(event.target.value) })}
-                  />
+                  >
+                    <option value="">Chọn linh kiện</option>
+                    {item.partId && !(catalog.data?.data ?? []).some((part) => part.id === item.partId) ? (
+                      <option value={item.partId}>{item.description || `Part #${item.partId}`}</option>
+                    ) : null}
+                    {(catalog.data?.data ?? []).map((part) => (
+                      <option key={part.id} value={part.id}>
+                        {part.sku} · {part.name} (tồn {part.quantityOnHand})
+                      </option>
+                    ))}
+                  </select>
                 </FormField>
               ) : (
                 <FormField label="Mô tả" htmlFor={`quote-desc-${index}`} required>

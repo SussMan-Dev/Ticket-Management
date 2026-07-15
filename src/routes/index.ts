@@ -8,6 +8,11 @@ import {
 } from "../modules/diagnoses/diagnosis.route.js";
 import { deviceRouter } from "../modules/devices/device.route.js";
 import {
+  partRequestRouter,
+  ticketPartRequestRouter,
+} from "../modules/inventory/inventory.route.js";
+import { partRouter } from "../modules/parts/part.route.js";
+import {
   quotationRouter,
   ticketQuotationRouter,
 } from "../modules/quotations/quotation.route.js";
@@ -32,9 +37,12 @@ apiRouter.use("/auth", authRouter);
 apiRouter.use("/users", userRouter);
 apiRouter.use("/customers", customerRouter);
 apiRouter.use("/devices", deviceRouter);
+apiRouter.use("/parts", partRouter);
+apiRouter.use("/part-requests", partRequestRouter);
 apiRouter.use("/repair-tickets", ticketAssignmentRouter);
 apiRouter.use("/repair-tickets", ticketDiagnosisRouter);
 apiRouter.use("/repair-tickets", ticketQuotationRouter);
+apiRouter.use("/repair-tickets", ticketPartRequestRouter);
 apiRouter.use("/repair-tickets", repairTicketRouter);
 apiRouter.use("/diagnoses", diagnosisRouter);
 apiRouter.use("/quotations", quotationRouter);

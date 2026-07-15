@@ -23,7 +23,7 @@ Every state change locks the ticket, validates its current state, updates the ti
 2. Manager assigns one active technician.
 3. Technician diagnoses; manager approves the diagnosis, then Phase 6 owns quotation creation and approval.
 4. Customer accepts or rejects the unexpired quotation.
-5. Inventory fulfills parts without allowing negative stock.
+5. The assigned technician requests parts. Inventory may fulfill in portions without allowing negative stock; the ticket resumes repair only when no open request remains.
 6. Technician records repair logs and test outcomes.
 7. Cashier invoices and records payment.
 8. Receptionist delivers; customer may review after delivery.
@@ -32,4 +32,4 @@ Every state change locks the ticket, validates its current state, updates the ti
 
 ## Phase implementation boundaries
 
-Phase 4 enforces actor/resource checks and implements ticket creation, `NEW → RECEIVED`, allowed cancellation, and manager hold/resume between `RECEIVED` and `ON_HOLD`. Phase 5 adds `RECEIVED → ASSIGNED`, `ASSIGNED → DIAGNOSING`, diagnosis submission to `WAITING_FOR_QUOTATION`, and revision back to `DIAGNOSING` through the owning Assignment/Diagnosis services. The generic status endpoint continues to reject assignment, diagnosis, quotation, inventory, repair/testing, payment, and delivery transitions even when they are candidates in `ALLOWED_TICKET_TRANSITIONS`.
+Phase 4 enforces actor/resource checks and implements ticket creation, `NEW → RECEIVED`, allowed cancellation, and manager hold/resume between `RECEIVED` and `ON_HOLD`. Phase 5 adds `RECEIVED → ASSIGNED`, `ASSIGNED → DIAGNOSING`, diagnosis submission to `WAITING_FOR_QUOTATION`, and revision back to `DIAGNOSING` through the owning Assignment/Diagnosis services. Phase 6 owns quotation/customer-decision transitions. Phase 7 owns `REPAIRING → WAITING_FOR_PARTS` when the assigned technician requests parts and `WAITING_FOR_PARTS → REPAIRING` after the final open request is fulfilled. The generic status endpoint continues to reject assignment, diagnosis, quotation, inventory, repair/testing, payment, and delivery transitions even when they are candidates in `ALLOWED_TICKET_TRANSITIONS`.

@@ -137,6 +137,7 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Important columns: unique SKU, prices, `quantity_on_hand`, `minimum_stock`, `is_active`.
 - Important indexes: name; active/stock threshold.
 - Owned by: Parts/Inventory.
+- Implementation: Phase 7 catalog creation starts at zero balance. Stock-in, signed adjustments, and fulfillment lock the part row and commit the balance plus immutable ledger entry atomically.
 - Read full schema when: pricing, stock, low-stock, or catalog changes.
 
 ## diagnosis_parts
@@ -180,6 +181,7 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Important columns: status, note, approval timestamp.
 - Important indexes: status/created time and ticket.
 - Owned by: Inventory.
+- Implementation: Phase 7 creates requests only for the active assigned technician, records decisions and notifications transactionally, and resumes the ticket only after no open request remains.
 - Read full schema when: request approval/fulfillment workflow changes.
 
 ## part_request_items
@@ -190,6 +192,7 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Important columns: positive `requested_quantity`, bounded `fulfilled_quantity`.
 - Important indexes: unique `(part_request_id, part_id)`.
 - Owned by: Inventory.
+- Implementation: Phase 7 locks request items for fulfillment and increments fulfilled quantities without exceeding either the requested balance or stock.
 - Read full schema when: partial fulfillment changes.
 
 ## inventory_transactions
@@ -200,6 +203,7 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Important columns: movement type, positive quantity, before/after balances, generic reference, note.
 - Important indexes: part, ticket, created time.
 - Owned by: Inventory.
+- Implementation: Phase 7 inserts positive `STOCK_IN`, `ADJUSTMENT_IN`, `ADJUSTMENT_OUT`, and `STOCK_OUT` movements with server-calculated before/after balances, actor, note, and request reference where applicable. Rows are never updated or deleted.
 - Read full schema when: any stock movement, return, audit, or reconciliation changes.
 
 ## repair_logs

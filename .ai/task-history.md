@@ -1,5 +1,52 @@
 # Task History
 
+## 2026-07-15 — Phase 7 Parts, Inventory, and frontend integration
+
+Completed:
+
+- Implemented the seven-file Parts and Inventory backend modules with catalog, stock-in/adjustment, movement history, technician requests, inventory decisions, and partial fulfillment.
+- Enforced zero opening stock, immutable balance movements, stable row locking, non-negative inventory, outstanding-request bounds, actor/reason auditability, active assignment, and request ownership.
+- Added atomic ticket/history transitions into parts waiting when repair needs new parts and back to repair only after the final open request is fulfilled.
+- Added Parts and Part Requests frontend workspaces, inventory actions, ticket-scoped technician request creation, manager read visibility, and role-specific navigation/dashboard links.
+- Replaced raw Part ID entry in diagnosis and quotation forms with active-catalog selections.
+- Added 22 backend service/API tests and 3 frontend inventory integration tests, and synchronized business/module/API/database/frontend/AI documentation.
+
+Changed files:
+
+- Added `src/modules/parts/*`, `src/modules/inventory/*`, and four Phase 7 backend test files.
+- Mounted Phase 7 routes under `/parts`, `/part-requests`, and ticket-scoped `/repair-tickets`.
+- Added `frontend/src/features/parts/*` and `frontend/src/features/inventory/*`; updated shared routes, navigation, dashboard, domain types, query keys, ticket detail, diagnosis, and quotation integrations.
+- Updated affected README, business/module/authorization/workflow documentation, and `.ai` maps/status/task files.
+
+Database changes:
+
+- No migration was required; the existing Parts and Inventory schema was used.
+- Real MySQL read, insert, lock, balance-update, and ledger queries were verified in a rollback-only transaction, so no fixture was persisted.
+
+API changes:
+
+- Added role-safe `GET/POST/PATCH /api/v1/parts` operations plus stock-in, adjustment, and transaction-history actions.
+- Added assigned-technician `POST /api/v1/repair-tickets/:ticketId/part-requests`.
+- Added scoped request list/detail and inventory-staff approve/reject/fulfill actions under `/api/v1/part-requests`.
+
+Important decisions:
+
+- Technicians see active catalog data without purchase prices; inventory staff own every mutation/decision; managers are read-only.
+- Part creation starts at zero. Every balance change uses the immutable ledger; signed adjustments require a non-empty note.
+- Partial fulfillment is supported and cannot exceed outstanding demand or stock. The ticket resumes repair only when no other open request remains.
+- `RETURN` and request `CANCELLED` remain reserved because Phase 7 defines no public endpoint for a correctly referenced return/cancellation workflow.
+
+Verification:
+
+- Backend typecheck/build passed; all 134 backend tests passed.
+- Frontend typecheck/lint/build passed; all 19 frontend tests passed.
+- Phase 7 repository read/write/locking flows passed against real MySQL; SQL remains repository-only.
+- Backend health and the live frontend at `http://localhost:5173` responded successfully.
+
+Remaining:
+
+- Phase 8 repair logs, fulfilled-part usage, testing, and technical completion.
+
 ## 2026-07-15 — Phase 6 quotations and real frontend integration
 
 Completed:

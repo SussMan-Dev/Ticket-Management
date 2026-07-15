@@ -14,4 +14,9 @@ export const queryKeys = {
   diagnoses: (ticketId: number) => ["repair-tickets", ticketId, "diagnoses"] as const,
   quotations: (ticketId: number) => ["repair-tickets", ticketId, "quotations"] as const,
   quotation: (id: number) => ["quotations", id] as const,
+  parts: (params?: unknown) => ["parts", params] as const,
+  part: (id: number) => ["parts", id] as const,
+  partTransactions: (id: number, params?: unknown) => ["parts", id, "transactions", params] as const,
+  partRequests: (params?: unknown) => ["part-requests", params] as const,
+  partRequest: (id: number) => ["part-requests", id] as const,
 };

@@ -54,7 +54,12 @@
 ## Inventory
 
 - Stock may never be negative. A balance update and its `inventory_transactions` record are atomic.
-- Fulfilled quantity cannot exceed requested quantity. Stock history and part usage are not overwritten.
+- New parts start with zero stock; all balance changes flow through an immutable movement with server-calculated before/after values.
+- Inventory staff own catalog mutations, stock-in, signed adjustments with mandatory reasons, request decisions, and fulfillment. Managers have read-only visibility; technicians see the active catalog without purchase prices.
+- Only the active assigned technician may create a request, using active unique parts and positive quantities, while the ticket is `WAITING_FOR_PARTS` or `REPAIRING`.
+- Creating a request during repair atomically returns the ticket to `WAITING_FOR_PARTS`. Fully fulfilling the last open request atomically resumes it to `REPAIRING`.
+- Fulfillment may be partial, but it cannot exceed the outstanding requested quantity or available stock. Request items, part balances, movement history, ticket history, notifications, and audit records are not overwritten.
+- Phase 7 exposes no return or request-cancellation endpoint; those reserved schema states require a later explicit workflow.
 
 ## Payments and delivery
 

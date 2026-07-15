@@ -2,13 +2,13 @@
 
 ## Frontend Application
 
-Purpose: standalone browser UI for implemented Auth through Quotation workflows.
+Purpose: standalone browser UI for implemented Auth through Inventory workflows.
 
 Main files: `frontend/src/app/`, `frontend/src/features/`, `frontend/src/lib/api/`, `frontend/src/lib/auth/`, `frontend/src/layouts/`, `frontend/src/routes/`, and `frontend/src/components/ui/`.
 
 Configuration and docs: `frontend/package.json`, `frontend/vite.config.ts`, `frontend/eslint.config.js`, `frontend/.env.example`, and `frontend/README.md`.
 
-Read when: changing browser authentication, role navigation, feature pages, frontend API DTOs/hooks, forms, quotation adapter integration, responsive styling, or frontend tests.
+Read when: changing browser authentication, role navigation, feature pages, frontend API DTOs/hooks, forms, quotation/catalog/inventory integration, responsive styling, or frontend tests.
 
 Important rules: access tokens stay in memory; refresh uses the HttpOnly cookie; UI role visibility never replaces backend authorization; components do not call `fetch`; quotation amounts render only server responses and PART edits never send a client price.
 
@@ -140,15 +140,15 @@ Important rules: approved-diagnosis snapshots; server-calculated totals; catalog
 
 Purpose: part catalog, balances, requests, fulfillment/return, and immutable movement history.
 
-Main files: standard seven files under `src/modules/parts/` and `src/modules/inventory/` (planned Phase 7).
+Main files: `src/modules/parts/part.route.ts`, `part.controller.ts`, `part.service.ts`, `part.repository.ts`, `part.model.ts`, `part.schema.ts`, `part.dto.ts`; and the corresponding `inventory.*` files under `src/modules/inventory/` (implemented Phase 7).
 
 Tables: `parts`, `part_requests`, `part_request_items`, `inventory_transactions`.
 
-Dependencies: repair tickets, assignments, diagnoses, repair actions.
+Dependencies: repair tickets, assignments, diagnoses, quotations, users, notifications, audit logs, and future repair actions.
 
 Read when: stock, part pricing, part request, fulfillment, return, or low-stock logic changes.
 
-Important rules: lock balance rows; no negative stock; balance and transaction row are atomic; fulfillment does not exceed request.
+Important rules: inventory staff own catalog/movements/decisions; technicians require active assignment and see active catalog data without purchase prices; managers are read-only; lock balances in stable order; no negative stock; balance and immutable transaction row are atomic; partial fulfillment does not exceed outstanding request or stock; the final open request resumes repair atomically.
 
 ## Repair Actions Module
 

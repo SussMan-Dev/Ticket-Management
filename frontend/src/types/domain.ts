@@ -229,3 +229,79 @@ export interface Quotation {
   createdAt: string;
   updatedAt: string;
 }
+
+export type InventoryTransactionType =
+  | "STOCK_IN"
+  | "STOCK_OUT"
+  | "ADJUSTMENT_IN"
+  | "ADJUSTMENT_OUT"
+  | "RETURN";
+
+export interface Part {
+  id: number;
+  sku: string;
+  name: string;
+  description: string | null;
+  unit: string;
+  purchasePrice?: number;
+  sellingPrice: number;
+  quantityOnHand: number;
+  minimumStock: number;
+  isLowStock: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InventoryTransaction {
+  id: number;
+  part: { id: number; sku: string; name: string };
+  ticket: { id: number; ticketCode: string } | null;
+  transactionType: InventoryTransactionType;
+  quantity: number;
+  quantityBefore: number;
+  quantityAfter: number;
+  referenceType: string | null;
+  referenceId: number | null;
+  performedBy: { id: number; fullName: string };
+  note: string | null;
+  createdAt: string;
+}
+
+export type PartRequestStatus =
+  | "PENDING"
+  | "APPROVED"
+  | "PARTIALLY_FULFILLED"
+  | "FULFILLED"
+  | "REJECTED"
+  | "CANCELLED";
+
+export interface PartRequestItem {
+  id: number;
+  part: {
+    id: number;
+    sku: string;
+    name: string;
+    unit: string;
+    sellingPrice: number;
+    quantityOnHand: number;
+    isActive: boolean;
+  };
+  requestedQuantity: number;
+  fulfilledQuantity: number;
+  remainingQuantity: number;
+  createdAt: string;
+}
+
+export interface PartRequest {
+  id: number;
+  ticket: { id: number; ticketCode: string };
+  requestedBy: { id: number; fullName: string };
+  status: PartRequestStatus;
+  note: string | null;
+  approvedBy: { id: number; fullName: string } | null;
+  approvedAt: string | null;
+  items: PartRequestItem[];
+  createdAt: string;
+  updatedAt: string;
+}

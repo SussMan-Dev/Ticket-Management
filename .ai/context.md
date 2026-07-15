@@ -6,10 +6,10 @@ This file is the short entry point requested by IDE/agent workflows. Detailed, c
 
 - Project: Repair Ticket Management System using Node.js, Express, TypeScript, MySQL 8, `mysql2/promise`, and raw parameterized SQL.
 - Architecture: Route -> Middleware -> Controller -> Service -> Repository -> MySQL.
-- Completed: Phases 1–6, through versioned quotations and customer response.
-- Verified: backend TypeScript/build and 112 tests; frontend lint/build and 16 tests; Phase 6 repository SELECT/locking queries against MySQL.
-- Frontend: standalone React app under `frontend/` integrates Phases 1–6; quotation screens use the real typed API and server-calculated totals.
-- Next: Phase 7 parts catalog, stock ledger, and part-request fulfillment.
+- Completed: Phases 1–7, through the parts catalog, stock ledger, and part-request fulfillment.
+- Verified: backend typecheck/build and 134 tests; frontend typecheck/lint/build and 19 tests; Phase 7 read, write, ledger, and locking queries against MySQL with rollback-safe verification.
+- Frontend: standalone React app under `frontend/` integrates Phases 1–7, including role-safe parts/request workspaces and catalog selectors for diagnosis and quotation lines.
+- Next: Phase 8 repair logs, fulfilled-part usage, testing, and technical completion.
 
 ## Phase 5 capabilities
 
@@ -21,7 +21,7 @@ This file is the short entry point requested by IDE/agent workflows. Detailed, c
 
 ## Workflow boundary
 
-Phases 4–6 expose intake, assignment, diagnosis, and quotation/customer-decision transitions through their owning services. The generic manager endpoint remains restricted to `RECEIVED <-> ON_HOLD`. Inventory, repair/testing, payment, delivery, closure, and timeline transitions remain owned by later phases.
+Phases 4–7 expose intake, assignment, diagnosis, quotation/customer-decision, and part-request transitions through their owning services. The generic manager endpoint remains restricted to `RECEIVED <-> ON_HOLD`. Repair/testing, payment, delivery, closure, and timeline transitions remain owned by later phases.
 
 ## Canonical files
 

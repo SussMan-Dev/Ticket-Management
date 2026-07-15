@@ -18,12 +18,13 @@ export function navigationForRole(role: UserRole): NavigationItem[] {
     case "RECEPTIONIST":
       return [...common, { label: "Khách hàng", to: "/customers", icon: "◎" }, { label: "Thiết bị", to: "/devices", icon: "▣" }, ...operational];
     case "TECHNICIAN":
-      return [...common, ...operational];
+      return [...common, ...operational, { label: "Catalog linh kiện", to: "/parts", icon: "◇" }, { label: "Yêu cầu của tôi", to: "/part-requests", icon: "⇄" }];
     case "MANAGER":
-      return [...common, ...operational, { label: "Khách hàng", to: "/customers", icon: "◎" }];
+      return [...common, ...operational, { label: "Khách hàng", to: "/customers", icon: "◎" }, { label: "Linh kiện", to: "/parts", icon: "◇" }, { label: "Part requests", to: "/part-requests", icon: "⇄" }];
     case "ADMIN":
       return [...common, { label: "Tài khoản", to: "/users", icon: "♙" }];
     case "INVENTORY_STAFF":
+      return [...common, { label: "Linh kiện & kho", to: "/parts", icon: "◇" }, { label: "Part requests", to: "/part-requests", icon: "⇄" }];
     case "CASHIER":
       return [...common, { label: "Module mở rộng", to: "/extension", icon: "+" }];
   }

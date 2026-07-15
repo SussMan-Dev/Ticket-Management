@@ -1,4 +1,4 @@
-import type { DiagnosisStatus, QuotationStatus, TicketPriority, TicketStatus, UserAccountStatus } from "../../types/domain";
+import type { DiagnosisStatus, PartRequestStatus, QuotationStatus, TicketPriority, TicketStatus, UserAccountStatus } from "../../types/domain";
 
 const labels: Record<string, string> = {
   ACTIVE: "Đang hoạt động", INACTIVE: "Tạm ngưng", LOCKED: "Đã khóa",
@@ -9,13 +9,14 @@ const labels: Record<string, string> = {
   DELIVERED: "Đã bàn giao", CLOSED: "Đã đóng", ON_HOLD: "Tạm giữ", CANCELLED: "Đã hủy",
   DRAFT: "Bản nháp", SUBMITTED: "Chờ duyệt", REVISION_REQUIRED: "Cần chỉnh sửa", APPROVED: "Đã duyệt",
   PENDING_APPROVAL: "Chờ duyệt", SENT: "Đã gửi", ACCEPTED: "Đã chấp nhận", REJECTED: "Đã từ chối",
+  PENDING: "Chờ duyệt", PARTIALLY_FULFILLED: "Đã cấp một phần", FULFILLED: "Đã cấp đủ",
   EXPIRED: "Hết hạn", SUPERSEDED: "Đã thay thế", LOW: "Thấp", NORMAL: "Bình thường", HIGH: "Cao", URGENT: "Khẩn cấp",
 };
 
-type StatusValue = TicketStatus | TicketPriority | DiagnosisStatus | QuotationStatus | UserAccountStatus;
+type StatusValue = TicketStatus | TicketPriority | DiagnosisStatus | QuotationStatus | PartRequestStatus | UserAccountStatus;
 
 export function StatusBadge({ value }: { value: StatusValue }) {
-  const tone = ["ACTIVE", "APPROVED", "ACCEPTED", "COMPLETED", "CLOSED", "DELIVERED"].includes(value)
+  const tone = ["ACTIVE", "APPROVED", "ACCEPTED", "COMPLETED", "CLOSED", "DELIVERED", "FULFILLED"].includes(value)
     ? "success"
     : ["CANCELLED", "REJECTED", "CUSTOMER_REJECTED", "LOCKED", "URGENT"].includes(value)
       ? "danger"

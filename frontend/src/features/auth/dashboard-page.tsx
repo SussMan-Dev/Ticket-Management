@@ -15,7 +15,7 @@ const roleCopy: Record<UserRole, { title: string; description: string }> = {
   TECHNICIAN: { title: "Công việc đang được phân công", description: "Ưu tiên chẩn đoán các phiếu đang chờ xử lý của bạn." },
   MANAGER: { title: "Điều phối vận hành", description: "Theo dõi hàng đợi, phân công kỹ thuật viên và duyệt chẩn đoán." },
   ADMIN: { title: "Quản trị tài khoản", description: "Kiểm soát quyền truy cập và trạng thái người dùng hệ thống." },
-  INVENTORY_STAFF: { title: "Không gian kho", description: "Điểm mở rộng đã sẵn sàng; API kho được triển khai ở Phase 7." },
+  INVENTORY_STAFF: { title: "Không gian kho", description: "Quản lý catalog, ledger và cấp linh kiện theo part request." },
   CASHIER: { title: "Không gian thu ngân", description: "Điểm mở rộng đã sẵn sàng; API thanh toán được triển khai ở Phase 9." },
 };
 
@@ -23,7 +23,7 @@ export function DashboardPage() {
   const { user } = useAuth();
   if (!user) return null;
   const copy = roleCopy[user.role];
-  return <><PageHeader eyebrow="ElectronicFixer workspace" title={`Xin chào, ${user.fullName.split(" ").at(-1) ?? user.fullName}`} description={copy.description} /><section className="hero-card"><div><span className="eyebrow eyebrow--light">Bắt đầu ngày làm việc</span><h2>{copy.title}</h2><p>{copy.description}</p></div><div className="hero-card__art" aria-hidden="true"><span>EF</span><i /><i /></div></section>{user.role === "ADMIN" ? <AdminOverview /> : ["INVENTORY_STAFF", "CASHIER"].includes(user.role) ? <ExtensionOverview /> : <OperationalOverview role={user.role} />}</>;
+  return <><PageHeader eyebrow="ElectronicFixer workspace" title={`Xin chào, ${user.fullName.split(" ").at(-1) ?? user.fullName}`} description={copy.description} /><section className="hero-card"><div><span className="eyebrow eyebrow--light">Bắt đầu ngày làm việc</span><h2>{copy.title}</h2><p>{copy.description}</p></div><div className="hero-card__art" aria-hidden="true"><span>EF</span><i /><i /></div></section>{user.role === "ADMIN" ? <AdminOverview /> : user.role === "INVENTORY_STAFF" ? <InventoryOverview /> : user.role === "CASHIER" ? <ExtensionOverview /> : <OperationalOverview role={user.role} />}</>;
 }
 
 function OperationalOverview({ role }: { role: UserRole }) {
@@ -44,4 +44,8 @@ function AdminOverview() {
 
 function ExtensionOverview() {
   return <Card><EmptyState title="Module chưa có backend API" description="Navigation extension point đã sẵn sàng. Chức năng nghiệp vụ sẽ được nối khi phase tương ứng hoàn tất." action={<Link className="button button--secondary button--md" to="/extension">Xem phạm vi</Link>} /></Card>;
+}
+
+function InventoryOverview() {
+  return <div className="metric-grid"><Card><span className="metric__label">Catalog & balance</span><strong className="metric__value metric__value--text">Live</strong><Link to="/parts">Quản lý linh kiện →</Link></Card><Card><span className="metric__label">Hàng đợi cấp kho</span><strong className="metric__value metric__value--text">Requests</strong><Link to="/part-requests">Mở part requests →</Link></Card></div>;
 }

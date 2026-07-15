@@ -27,13 +27,13 @@ Intake (`NEW`/`RECEIVED`) → assignment → diagnosis → quotation/customer de
 
 ## Implementation status
 
-Phases 1 through 6 are complete. Foundation includes configuration, MySQL lifecycle, common errors/responses, validation, logging, transactions, schema/seeds, and tests. Auth and Users provide secure account/session lifecycle and administration. Customers and Devices provide owned/staff intake data. Repair Tickets provides owner/assignment-scoped retrieval, intake CRUD, receive/hold/cancel transitions, immutable status history, and validated attachment metadata. Assignments provides manager-only atomic assignment/reassignment. Diagnoses provides active-assignee drafts/parts and manager review. Quotations provides approved-diagnosis price snapshots, server totals, version supersession, manager approval/sending, expiry, and owner-only customer response with atomic ticket history.
+Phases 1 through 7 are complete. Foundation includes configuration, MySQL lifecycle, common errors/responses, validation, logging, transactions, schema/seeds, and tests. Auth and Users provide secure account/session lifecycle and administration. Customers and Devices provide owned/staff intake data. Repair Tickets provides owner/assignment-scoped retrieval, intake CRUD, receive/hold/cancel transitions, immutable status history, and validated attachment metadata. Assignments provides manager-only atomic assignment/reassignment. Diagnoses provides active-assignee drafts/parts and manager review. Quotations provides approved-diagnosis price snapshots, server totals, version supersession, manager approval/sending, expiry, and owner-only customer response. Parts and Inventory provide a role-safe catalog, immutable stock ledger, assigned-technician requests, partial fulfillment, and atomic ticket resumption without negative stock.
 
-A standalone React frontend exists under `frontend/`. It integrates implemented Phase 1–6 contracts with memory-only access tokens, refresh-cookie rotation, role-aware routes, responsive Vietnamese UI, typed Query hooks, validated forms, and automated tests. Quotation screens now use the real API and render only server-calculated prices/totals.
+A standalone React frontend exists under `frontend/`. It integrates implemented Phase 1–7 contracts with memory-only access tokens, refresh-cookie rotation, role-aware routes, responsive Vietnamese UI, typed Query hooks, validated forms, and automated tests. Quotation screens render only server-calculated prices/totals; diagnosis, quotation, and part-request forms select authorized catalog parts instead of accepting raw IDs.
 
 ## Next work
 
-Phase 7: part catalog management, stock-in/adjustment ledger, ticket part requests, approval/fulfillment, and non-negative inventory enforcement.
+Phase 8: assigned-technician repair logs, fulfilled-part usage, test results, and guarded repair/testing/completion transitions.
 
 ## AI navigation
 

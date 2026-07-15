@@ -11,11 +11,11 @@ Legend: `Own` means only resources owned by the user; `Assigned` means an active
 | Assign technician | — | — | — | Manage | — | — | — |
 | Diagnose/repair/test | View | — | Assigned | Review | — | — | — |
 | Approve quotation | Respond own | — | — | Manage | — | — | — |
-| Move inventory | — | — | Request | View/approve policy | — | Manage | — |
+| Move inventory | — | — | Request when assigned | View | — | Manage | — |
 | Invoice/payment/refund | View own | — | — | Approve exceptions | — | — | Manage |
 | Reports | — | — | Own performance when allowed | All operational | System/audit | Inventory reports | Billing reports |
 | User role/status | — | — | — | — | Manage | — | — |
 
 Every endpoint first authenticates a signed access token, then checks its role, then the service checks ownership/assignment and current resource state. Client-supplied roles are ignored.
 
-Phases 2 through 5 enforce this matrix for Auth, Users, Customers, Devices, Repair Tickets, Assignments, and Diagnoses. Routes authenticate and check roles in middleware; services then enforce customer ownership, active technician assignment, diagnosis authorship, current state, and manager-only reviews. Admin remains account/configuration-only and cannot use operational ticket endpoints.
+Phases 2 through 7 enforce this matrix through Quotations, Parts, and Inventory. Routes authenticate and check roles in middleware; services then enforce customer ownership, active technician assignment, diagnosis authorship, request ownership, current state, and role-owned decisions. Admin remains account/configuration-only and cannot use operational ticket endpoints.

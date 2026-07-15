@@ -14,6 +14,7 @@ import type { RepairTicket, TicketAttachmentType, UserRole } from "../../types/d
 import { useAssignTicket, useReassignTicket } from "../assignments/assignments.api";
 import { DiagnosisPanel } from "../diagnoses/diagnosis-panel";
 import { useDiagnoses } from "../diagnoses/diagnoses.api";
+import { PartRequestPanel } from "../inventory/part-request-panel";
 import { QuotationPanel } from "../quotations/quotation-panel";
 import { useCancelTicket, useChangeTicketStatus, useCreateAttachment, useReceiveTicket, useTicket, useTicketAttachments, useTicketHistory } from "./tickets.api";
 import { ticketActionFlags } from "./ticket-action.rules";
@@ -33,7 +34,7 @@ export function TicketDetailPage() {
 function TechnicalSections({ ticket, role }: { ticket: RepairTicket; role: UserRole }) {
   const diagnoses = useDiagnoses(ticket.id);
   const approved = diagnoses.data?.find((diagnosis) => diagnosis.status === "APPROVED");
-  return <><Card><DiagnosisPanel ticket={ticket} /></Card>{["CUSTOMER", "TECHNICIAN", "MANAGER"].includes(role) ? <Card><QuotationPanel ticket={ticket} approvedDiagnosis={approved} /></Card> : null}</>;
+  return <><Card><DiagnosisPanel ticket={ticket} /></Card>{["CUSTOMER", "TECHNICIAN", "MANAGER"].includes(role) ? <Card><QuotationPanel ticket={ticket} approvedDiagnosis={approved} /></Card> : null}{["TECHNICIAN", "MANAGER"].includes(role) ? <Card><PartRequestPanel ticket={ticket} /></Card> : null}</>;
 }
 
 function TicketActions({ ticket }: { ticket: RepairTicket }) {

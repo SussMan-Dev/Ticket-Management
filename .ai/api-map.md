@@ -1,6 +1,6 @@
 # API Map
 
-Base URL: `/api/v1`. Phases 1 through 5 are implemented. Endpoints from later phases remain planned unless their section says otherwise.
+Base URL: `/api/v1`. Phases 1 through 7 are implemented. Endpoints from later phases remain planned unless their section says otherwise.
 
 ## Health
 
@@ -150,14 +150,16 @@ Rules: approved diagnosis; server-generated initial items; catalog-owned PART pr
 
 ## Parts and Inventory
 
+Status: implemented in Phase 7 with role-safe catalog reads, audited catalog/stock mutations, immutable movement history, assigned-technician requests, partial fulfillment, and atomic ticket history.
+
 Controllers/services/repositories: `part*` and `inventory*`. Tables: `parts`, `part_requests`, `part_request_items`, `inventory_transactions`, plus tickets/users.
 
 | Method and path | Roles | Transaction | Phase |
 |---|---|---|---|
 | `GET /parts` | TECHNICIAN read, INVENTORY_STAFF, MANAGER | No | 7 |
 | `GET /parts/:id` | TECHNICIAN read, INVENTORY_STAFF, MANAGER | No | 7 |
-| `POST /parts` | INVENTORY_STAFF | No | 7 |
-| `PATCH /parts/:id` | INVENTORY_STAFF | No | 7 |
+| `POST /parts` | INVENTORY_STAFF | Yes | 7 |
+| `PATCH /parts/:id` | INVENTORY_STAFF | Yes | 7 |
 | `POST /parts/:id/stock-in` | INVENTORY_STAFF | Yes | 7 |
 | `POST /parts/:id/adjust-stock` | INVENTORY_STAFF | Yes | 7 |
 | `GET /parts/:id/transactions` | INVENTORY_STAFF, MANAGER | No | 7 |
@@ -168,7 +170,7 @@ Controllers/services/repositories: `part*` and `inventory*`. Tables: `parts`, `p
 | `POST /part-requests/:id/fulfill` | INVENTORY_STAFF | Yes | 7 |
 | `POST /part-requests/:id/reject` | INVENTORY_STAFF | Yes | 7 |
 
-Rules: positive quantities; lock stock row; no negative balance; movement and balance atomic; fulfillment bounded by request/availability; every adjustment has actor/reason.
+Rules: new parts start at zero balance; technician reads omit purchase prices; request lines use positive quantities and active unique parts; technicians require active assignment and own-request scope; lock stock rows in stable order; no negative balance; movement and balance are atomic; partial fulfillment is bounded by outstanding request and availability; every signed adjustment has actor/reason; ticket/history changes are atomic. Phase 7 exposes no return or cancellation endpoint.
 
 ## Repair Logs and Testing
 
