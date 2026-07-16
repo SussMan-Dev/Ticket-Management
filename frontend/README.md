@@ -100,18 +100,19 @@ All UI calls go through typed feature API functions and centralized query keys. 
 ## Phase 6–10 workflow integration
 
 - `quotation.gateway.ts` binds the pages to the implemented Phase 6 REST endpoints.
-- Creating a draft sends only the expiry; the backend generates initial items from the approved diagnosis.
+- Creating a draft sends only the expiry; the backend generates a diagnosis estimate containing labor and provisional catalog-priced parts.
 - Draft PART edits send only `partId` and quantity. Catalog descriptions, prices, line totals, and header totals remain server-authoritative.
-- Role/status actions map to submit, approve, send, accept, and reject endpoints; successful mutations invalidate quotation, ticket, and status-history queries.
-- A sent, unexpired quotation shows accept/reject controls directly on the owning customer's ticket page as well as on quotation detail.
+- After draft creation, Managers are taken directly to estimate detail. One “Duyệt và gửi khách hàng” confirmation runs the required submit, approve, and send endpoints in order; partial failures refresh the current estimate state so the flow can be resumed safely.
+- Customer repair accept/reject actions remain separate, and successful mutations invalidate estimate, ticket, and status-history queries.
+- A sent, unexpired estimate shows repair accept/reject controls directly on the owning customer's ticket page as well as on estimate detail.
 - Expired and superseded versions render read-only. The backend remains authoritative if browser time or cached ticket state is stale.
-- Diagnosis and quotation PART lines use the active catalog rather than accepting raw numeric IDs.
-- Technicians can create ticket requests from catalog selections. Inventory staff can manage stock and fulfill outstanding quantities; managers receive read-only visibility.
+- Diagnosis and estimate PART lines use the active catalog and are provisional only; they do not reserve stock or directly become invoice lines.
+- During repair, technicians create requests from catalog selections. Each line keeps its request-time selling price; inventory staff approve and fulfill outstanding quantities, and managers receive read-only visibility.
 - Successful stock/request mutations invalidate the affected catalog, request, ticket, and status-history queries.
 - Assigned technicians record repair logs only from fulfilled parts; finishing a log makes it read-only. Customers receive the backend-sanitized progress view.
 - Tests are appended after a finished repair log. The completion action renders the server outcome and refreshes ticket, status-history, repair/test, and timeline caches.
 - Ticket detail uses the Phase 8 aggregated timeline instead of presenting status history as the complete operational history.
-- Cashiers choose only completed tickets for invoice creation; invoice totals are rendered from the server snapshot and are never editable in the browser.
+- Cashiers choose only completed tickets for invoice creation. The server calculates accepted labor/service plus actual warehouse-fulfilled quantities at request-time prices; provisional diagnosis parts are excluded and totals are never editable in the browser.
 - Payment/refund mutations invalidate invoice, payment, ticket, and history caches so delivery readiness always follows backend state.
 - Manager assignment uses a server-filtered active/unlocked technician selector rather than a raw numeric ID.
 - Notification counts refresh in the app header; reference links mark items read and navigate to the related ticket or invoice.

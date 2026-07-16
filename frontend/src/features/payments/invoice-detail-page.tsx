@@ -39,7 +39,7 @@ export function InvoiceDetailPage() {
 function InvoiceSummary({ invoice }: { invoice: Invoice }) {
   return <>
     <div className="metric-grid billing-metrics">
-      <Card><span className="metric__label">Tổng hóa đơn</span><strong className="metric__value">{formatMoney(invoice.totalAmount)}</strong><small>Trước giảm giá và thuế: {formatMoney(invoice.subtotal)}</small></Card>
+      <Card><span className="metric__label">Tổng hóa đơn</span><strong className="metric__value">{formatMoney(invoice.totalAmount)}</strong><small>Gồm tiền công và linh kiện kho đã cấp trong lúc sửa: {formatMoney(invoice.subtotal)}</small></Card>
       <Card><span className="metric__label">Đã thanh toán</span><strong className="metric__value">{formatMoney(invoice.paidAmount)}</strong><small>Cập nhật {formatDateTime(invoice.updatedAt)}</small></Card>
       <Card><span className="metric__label">Còn lại</span><strong className="metric__value">{formatMoney(invoice.balanceAmount)}</strong><small>{invoice.balanceAmount === 0 ? "Đã thanh toán đủ" : "Có thể thanh toán từng phần"}</small></Card>
     </div>

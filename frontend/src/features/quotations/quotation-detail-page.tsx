@@ -19,7 +19,7 @@ import {
   visibleQuotationActions,
   type QuotationAction,
 } from "./quotation.rules";
-import { useQuotation, useTransitionQuotation } from "./quotations.api";
+import { usePublishQuotation, useQuotation, useTransitionQuotation } from "./quotations.api";
 
 const actionCopy: Record<
   QuotationAction,
@@ -32,24 +32,16 @@ const actionCopy: Record<
   }
 > = {
   EDIT: { label: "Chỉnh sửa" },
-  SUBMIT: { label: "Gửi chờ duyệt", status: "PENDING_APPROVAL" },
-  APPROVE: {
-    label: "Duyệt báo giá",
-    status: "APPROVED",
-    title: "Duyệt báo giá?",
-    description: "Xác nhận nội dung và giá trị trước khi cho phép gửi khách hàng.",
-  },
-  SEND: {
-    label: "Gửi khách hàng",
-    status: "SENT",
-    title: "Gửi báo giá?",
-    description: "Khách hàng có thể chấp nhận hoặc từ chối khi báo giá còn hạn.",
+  PUBLISH: {
+    label: "Duyệt và gửi dự toán",
+    title: "Duyệt và gửi dự toán?",
+    description: "Dự toán sẽ được duyệt và gửi ngay. Khách hàng có thể đồng ý hoặc từ chối sửa chữa khi dự toán còn hạn.",
   },
   ACCEPT: {
-    label: "Chấp nhận báo giá",
+    label: "Đồng ý sửa chữa",
     status: "ACCEPTED",
-    title: "Chấp nhận báo giá?",
-    description: "Xác nhận bạn đồng ý với các hạng mục và tổng chi phí trong báo giá.",
+    title: "Đồng ý sửa chữa theo dự toán?",
+    description: "Dự toán giúp quyết định sửa chữa, không phải số tiền hóa đơn cố định. Hóa đơn sẽ cộng tiền công/dịch vụ và linh kiện kho thực tế cấp.",
   },
   REJECT: {
     label: "Từ chối báo giá",
@@ -62,7 +54,7 @@ const actionCopy: Record<
 
 const itemTypeLabels = {
   LABOR: "Tiền công",
-  PART: "Linh kiện",
+  PART: "Linh kiện dự kiến",
   OTHER: "Chi phí khác",
 } as const;
 
@@ -72,6 +64,7 @@ export function QuotationDetailPage() {
   const { user } = useAuth();
   const quotation = useQuotation(quotationId);
   const transition = useTransitionQuotation(ticketId, quotationId);
+  const publish = usePublishQuotation(ticketId, quotationId);
   const [editing, setEditing] = useState(false);
   const [confirm, setConfirm] = useState<QuotationAction | null>(null);
 
@@ -96,10 +89,6 @@ export function QuotationDetailPage() {
       setEditing(true);
       return;
     }
-    if (action === "SUBMIT") {
-      transition.mutate("PENDING_APPROVAL");
-      return;
-    }
     setConfirm(action);
   };
   const confirmed = actionCopy[confirm ?? "EDIT"];
@@ -108,8 +97,8 @@ export function QuotationDetailPage() {
     <>
       <PageHeader
         eyebrow={`Báo giá · Phiên bản ${data.version}`}
-        title="Chi tiết báo giá sửa chữa"
-        description="Kiểm tra từng hạng mục, đơn giá và tổng chi phí trước khi xác nhận."
+        title="Chi tiết dự toán sửa chữa"
+        description="Dự toán dùng để khách quyết định sửa chữa. Hóa đơn cuối cùng sẽ căn cứ tiền công/dịch vụ và linh kiện kho thực tế cấp."
         actions={(
           <Link className="button button--secondary button--md" to={`/tickets/${ticketId}`}>
             ← Về phiếu
@@ -127,7 +116,7 @@ export function QuotationDetailPage() {
         <Card>
           <div className="quote-summary">
             <div><span className="eyebrow">Trạng thái</span><StatusBadge value={data.status} /></div>
-            <div><span className="eyebrow">Tổng tiền</span><strong>{formatMoney(data.totalAmount)}</strong></div>
+            <div><span className="eyebrow">Tổng dự toán</span><strong>{formatMoney(data.totalAmount)}</strong></div>
             <div><span className="eyebrow">Hạn phản hồi</span><strong>{formatDateTime(data.expiresAt)}</strong></div>
           </div>
           <div className="table-wrap">
@@ -150,14 +139,15 @@ export function QuotationDetailPage() {
           </div>
           <dl className="amount-summary">
             <div><dt>Tiền công</dt><dd>{formatMoney(data.laborAmount)}</dd></div>
-            <div><dt>Tiền linh kiện</dt><dd>{formatMoney(data.partsAmount)}</dd></div>
+            <div><dt>Linh kiện dự kiến</dt><dd>{formatMoney(data.partsAmount)}</dd></div>
             {data.otherAmount > 0 ? (
               <div><dt>Chi phí khác</dt><dd>{formatMoney(data.otherAmount)}</dd></div>
             ) : null}
             <div><dt>Thuế</dt><dd>{formatMoney(data.taxAmount)}</dd></div>
             <div><dt>Giảm giá</dt><dd>{formatMoney(data.discountAmount)}</dd></div>
-            <div><dt>Tổng cộng</dt><dd>{formatMoney(data.totalAmount)}</dd></div>
+            <div><dt>Tổng dự toán</dt><dd>{formatMoney(data.totalAmount)}</dd></div>
           </dl>
+          <p className="read-only-note">Linh kiện trong dự toán không tự động yêu cầu kho và không được lấy nguyên số lượng này để tính hóa đơn. Chỉ linh kiện thợ yêu cầu trong lúc sửa và kho thực tế cấp mới được cộng.</p>
           {data.customerResponseNote ? (
             <p className="read-only-note">Phản hồi khách hàng: {data.customerResponseNote}</p>
           ) : null}
@@ -178,7 +168,7 @@ export function QuotationDetailPage() {
               ))}
             </div>
           )}
-          <MutationError error={transition.error} />
+          <MutationError error={publish.error ?? transition.error} />
         </Card>
       )}
 
@@ -188,10 +178,12 @@ export function QuotationDetailPage() {
         description={confirmed.description ?? "Bạn có chắc chắn muốn tiếp tục?"}
         confirmLabel={confirmed.label}
         danger={confirmed.danger}
-        loading={transition.isPending}
+        loading={publish.isPending || transition.isPending}
         onClose={() => setConfirm(null)}
         onConfirm={() => {
-          if (confirmed.status) {
+          if (confirm === "PUBLISH") {
+            publish.mutate(data.status, { onSuccess: () => setConfirm(null) });
+          } else if (confirmed.status) {
             transition.mutate(confirmed.status, { onSuccess: () => setConfirm(null) });
           }
         }}

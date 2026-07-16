@@ -38,7 +38,7 @@ export function RepairActionPanel({ ticket }: { ticket: RepairTicket }) {
   const technicianCanRepair = user.role === "TECHNICIAN" && ticket.status === "REPAIRING";
   const technicianCanTest = user.role === "TECHNICIAN" &&
     ["REPAIRING", "TESTING"].includes(ticket.status) &&
-    repairLogs.some((log) => Boolean(log.finishedAt));
+    repairLogs.length > 0 && repairLogs.every((log) => Boolean(log.finishedAt));
 
   return (
     <section className="detail-section" aria-labelledby="repair-actions-title">
@@ -152,7 +152,7 @@ function CreateRepairLogForm({ ticketId, logs }: { ticketId: number; logs: Repai
       </FormField>
       {parts.map((line, index) => (
         <div className="part-row" key={index}>
-          <FormField label="Linh kiện đã dùng" htmlFor={`repair-part-${index}`} required>
+          <FormField label="Linh kiện ghi nhận trong công việc" htmlFor={`repair-part-${index}`} required>
             <select id={`repair-part-${index}`} value={line.partId} onChange={(event) => setParts((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, partId: Number(event.target.value) } : item))}>
               <option value={0}>Chọn linh kiện đã được cấp</option>
               {partOptions.map((part) => <option key={part.partId} value={part.partId}>{part.sku} · {part.name} (còn {part.quantity} {part.unit})</option>)}
@@ -217,7 +217,7 @@ function CompleteTesting({ ticketId }: { ticketId: number }) {
   return (
     <Card className="form-card">
       <h3>Kết thúc vòng kiểm tra</h3>
-      <p className="read-only-note">Hệ thống dùng kết quả mới nhất của từng bài kiểm tra. Nếu tất cả đều đạt, thiết bị được đánh dấu hoàn tất; nếu còn mục chưa đạt, phiếu sẽ quay lại bước sửa chữa.</p>
+      <p className="read-only-note">Hệ thống dùng kết quả mới nhất của từng bài kiểm tra. Linh kiện thợ yêu cầu và được kho thực tế cấp sẽ được tính vào hóa đơn theo đơn giá đã chốt khi yêu cầu; nhật ký linh kiện tại đây dùng để theo dõi công việc kỹ thuật.</p>
       <FormField label="Ghi chú kết luận" htmlFor="complete-testing-reason"><textarea id="complete-testing-reason" rows={2} value={reason} onChange={(event) => setReason(event.target.value)} /></FormField>
       <Button loading={complete.isPending} onClick={() => complete.mutate(reason.trim() || undefined)}>Hoàn tất kiểm tra</Button>
       <MutationError error={complete.error} />

@@ -64,3 +64,12 @@ export function useTransitionQuotation(ticketId: number, quotationId: number) {
     onSuccess: async () => invalidate(quotationId),
   });
 }
+
+export function usePublishQuotation(ticketId: number, quotationId: number) {
+  const invalidate = useQuotationMutation(ticketId);
+  return useMutation({
+    mutationFn: (currentStatus: QuotationStatus) =>
+      quotationGateway.publish(quotationId, currentStatus),
+    onSettled: async () => invalidate(quotationId),
+  });
+}

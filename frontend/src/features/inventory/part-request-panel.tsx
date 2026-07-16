@@ -10,6 +10,7 @@ import {
 import { FormField } from "../../components/ui/form-field";
 import { StatusBadge } from "../../components/ui/status-badge";
 import { useAuth } from "../../lib/auth/use-auth";
+import { formatMoney } from "../../lib/formatting/formatters";
 import type { RepairTicket } from "../../types/domain";
 import { useParts } from "../parts/parts.api";
 import { useCreatePartRequest, usePartRequests } from "./inventory.api";
@@ -34,6 +35,7 @@ export function PartRequestPanel({ ticket }: { ticket: RepairTicket }) {
         <div><span className="eyebrow">Cấp linh kiện</span><h2 id="part-request-title">Yêu cầu linh kiện</h2></div>
         {canCreate ? <Button variant="secondary" onClick={() => setCreating((value) => !value)}>{creating ? "Đóng" : "+ Tạo yêu cầu"}</Button> : null}
       </div>
+      {canCreate ? <div className="alert alert--info">Yêu cầu sẽ chốt đơn giá hiện tại. Kho phải duyệt và chỉ số lượng thực tế được cấp mới được cộng vào hóa đơn.</div> : null}
       {creating ? <CreateRequestForm ticketId={ticket.id} onDone={() => setCreating(false)} /> : null}
       {data.length === 0 ? <EmptyState title="Chưa có yêu cầu linh kiện" description="Kỹ thuật viên được phân công có thể gửi yêu cầu khi phiếu đang chờ linh kiện hoặc đang sửa chữa." /> : data.map((request) => (
         <Card key={request.id} className="diagnosis-card">
@@ -79,7 +81,7 @@ function CreateRequestForm({ ticketId, onDone }: { ticketId: number; onDone(): v
           <FormField label="Linh kiện" htmlFor={`request-part-${index}`} required>
             <select id={`request-part-${index}`} value={item.partId} onChange={(event) => change(index, { partId: Number(event.target.value) })}>
               <option value={0}>Chọn linh kiện</option>
-              {partOptions.map((part) => <option key={part.id} value={part.id}>{part.sku} · {part.name} (tồn {part.quantityOnHand})</option>)}
+              {partOptions.map((part) => <option key={part.id} value={part.id}>{part.sku} · {part.name} · {formatMoney(part.sellingPrice)} (tồn {part.quantityOnHand})</option>)}
             </select>
           </FormField>
           <FormField label="Số lượng" htmlFor={`request-quantity-${index}`} required><input id={`request-quantity-${index}`} type="number" min={1} value={item.requestedQuantity} onChange={(event) => change(index, { requestedQuantity: Number(event.target.value) })} /></FormField>

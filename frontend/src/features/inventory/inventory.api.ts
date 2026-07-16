@@ -20,12 +20,13 @@ export interface FulfillPartRequestInput {
   items: Array<{ partId: number; quantity: number }>;
 }
 
-export function usePartRequests(params: PartRequestsQuery) {
+export function usePartRequests(params: PartRequestsQuery, enabled = true) {
   return useQuery({
     queryKey: queryKeys.partRequests(params),
     queryFn: async () => apiClient.get<PartRequest[], PaginationMeta>(
       `/part-requests${toQueryString(params)}`,
     ),
+    enabled,
   });
 }
 

@@ -57,7 +57,7 @@ function CreateInvoiceCard({ onDone }: { onDone(): void }) {
     void navigate(`/invoices/${invoice.id}`);
   };
   return <Card className="form-card">
-    <div className="section-heading"><div><h2>Lập hóa đơn từ phiếu hoàn tất</h2><p>Tổng tiền được lấy trực tiếp từ báo giá đã được khách hàng chấp nhận.</p></div><Button variant="ghost" onClick={onDone}>Đóng</Button></div>
+    <div className="section-heading"><div><h2>Lập hóa đơn từ phiếu hoàn tất</h2><p>Hóa đơn lấy tiền công/dịch vụ từ dự toán đã chấp nhận và cộng đúng số linh kiện kho thực tế cấp trong lúc sửa.</p></div><Button variant="ghost" onClick={onDone}>Đóng</Button></div>
     <MutationError error={create.error} />
     <div className="form-grid">
       <FormField label="Tìm phiếu" htmlFor="billable-ticket-search" hint="Tìm theo mã phiếu, tiêu đề hoặc mô tả lỗi."><input id="billable-ticket-search" value={search} onChange={(event) => setSearch(event.target.value)} /></FormField>

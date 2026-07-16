@@ -1,6 +1,6 @@
 import type { Quotation, QuotationStatus, UserRole } from "../../types/domain";
 
-export type QuotationAction = "EDIT" | "SUBMIT" | "APPROVE" | "SEND" | "ACCEPT" | "REJECT";
+export type QuotationAction = "EDIT" | "PUBLISH" | "ACCEPT" | "REJECT";
 
 export function isQuotationExpired(quotation: Pick<Quotation, "expiresAt" | "status">, now = new Date()): boolean {
   return quotation.status === "EXPIRED" ||
@@ -14,9 +14,9 @@ export function visibleQuotationActions(
 ): QuotationAction[] {
   if (isQuotationExpired(quotation, now) || quotation.status === "SUPERSEDED") return [];
   const byStatus: Partial<Record<QuotationStatus, QuotationAction[]>> = {
-    DRAFT: role === "MANAGER" ? ["EDIT", "SUBMIT"] : [],
-    PENDING_APPROVAL: role === "MANAGER" ? ["APPROVE"] : [],
-    APPROVED: role === "MANAGER" ? ["SEND"] : [],
+    DRAFT: role === "MANAGER" ? ["EDIT", "PUBLISH"] : [],
+    PENDING_APPROVAL: role === "MANAGER" ? ["PUBLISH"] : [],
+    APPROVED: role === "MANAGER" ? ["PUBLISH"] : [],
     SENT: role === "CUSTOMER" ? ["ACCEPT", "REJECT"] : [],
   };
   return byStatus[quotation.status] ?? [];

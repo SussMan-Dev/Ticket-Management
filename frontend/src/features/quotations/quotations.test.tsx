@@ -1,9 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, renderHook, screen } from "@testing-library/react";
+import { HttpResponse, http } from "msw";
 import type { PropsWithChildren } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { queryKeys } from "../../lib/api/query-keys";
+import { server } from "../../test/server";
 import type { Quotation } from "../../types/domain";
 import { quotationGateway } from "./quotation.gateway";
 import { isQuotationReadOnly, visibleQuotationActions } from "./quotation.rules";
@@ -40,10 +42,10 @@ function quotation(
 }
 
 describe("quotation role/status rules", () => {
-  it("hiển thị đúng action cho Manager và Customer", () => {
-    expect(visibleQuotationActions("MANAGER", quotation("DRAFT"))).toEqual(["EDIT", "SUBMIT"]);
-    expect(visibleQuotationActions("MANAGER", quotation("PENDING_APPROVAL"))).toEqual(["APPROVE"]);
-    expect(visibleQuotationActions("MANAGER", quotation("APPROVED"))).toEqual(["SEND"]);
+  it("gộp các bước duyệt và gửi của Manager thành một action", () => {
+    expect(visibleQuotationActions("MANAGER", quotation("DRAFT"))).toEqual(["EDIT", "PUBLISH"]);
+    expect(visibleQuotationActions("MANAGER", quotation("PENDING_APPROVAL"))).toEqual(["PUBLISH"]);
+    expect(visibleQuotationActions("MANAGER", quotation("APPROVED"))).toEqual(["PUBLISH"]);
     expect(visibleQuotationActions("CUSTOMER", quotation("SENT"))).toEqual(["ACCEPT", "REJECT"]);
     expect(visibleQuotationActions("TECHNICIAN", quotation("SENT"))).toEqual([]);
   });
@@ -54,7 +56,36 @@ describe("quotation role/status rules", () => {
     expect(isQuotationReadOnly(quotation("SUPERSEDED"))).toBe(true);
   });
 
-  it("hiển thị chấp nhận/từ chối ngay trên phiếu khách hàng khi báo giá đã gửi", () => {
+  it("xuất bản báo giá qua ba bước nội bộ chỉ từ một yêu cầu của giao diện", async () => {
+    const calls: string[] = [];
+    const response = (status: Quotation["status"]) => HttpResponse.json({
+      success: true,
+      message: "OK",
+      data: quotation(status),
+      meta: null,
+    });
+    server.use(
+      http.post("http://localhost:3000/api/v1/quotations/1/submit", () => {
+        calls.push("submit");
+        return response("PENDING_APPROVAL");
+      }),
+      http.post("http://localhost:3000/api/v1/quotations/1/approve", () => {
+        calls.push("approve");
+        return response("APPROVED");
+      }),
+      http.post("http://localhost:3000/api/v1/quotations/1/send", () => {
+        calls.push("send");
+        return response("SENT");
+      }),
+    );
+
+    const published = await quotationGateway.publish(1, "DRAFT");
+
+    expect(calls).toEqual(["submit", "approve", "send"]);
+    expect(published.status).toBe("SENT");
+  });
+
+  it("hiển thị đồng ý/từ chối ngay trên phiếu khách hàng khi dự toán đã gửi", () => {
     const queryClient = new QueryClient();
     render(
       <QueryClientProvider client={queryClient}>
@@ -64,7 +95,7 @@ describe("quotation role/status rules", () => {
       </QueryClientProvider>,
     );
 
-    expect(screen.getByRole("button", { name: "Chấp nhận báo giá" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Đồng ý sửa chữa" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Từ chối" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Xem chi tiết" })).toHaveAttribute(
       "href",

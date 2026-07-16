@@ -294,10 +294,13 @@ export interface PartRequestItem {
     quantityOnHand: number;
     isActive: boolean;
   };
-  requestedQuantity: number;
-  fulfilledQuantity: number;
-  remainingQuantity: number;
-  createdAt: string;
+    requestedQuantity: number;
+    fulfilledQuantity: number;
+    remainingQuantity: number;
+    unitPrice: number;
+    requestedLineTotal: number;
+    fulfilledLineTotal: number;
+    createdAt: string;
 }
 
 export interface PartRequest {

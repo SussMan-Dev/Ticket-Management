@@ -26,6 +26,7 @@ export interface QuotationGateway {
   createDraft(input: CreateQuotationInput): Promise<Quotation>;
   updateDraft(id: number, input: UpdateQuotationInput): Promise<Quotation>;
   transition(id: number, status: QuotationStatus): Promise<Quotation>;
+  publish(id: number, currentStatus: QuotationStatus): Promise<Quotation>;
 }
 
 const actionByStatus: Partial<Record<QuotationStatus, string>> = {
@@ -35,6 +36,18 @@ const actionByStatus: Partial<Record<QuotationStatus, string>> = {
   ACCEPTED: "accept",
   REJECTED: "reject",
 };
+
+const publicationSteps: Partial<Record<QuotationStatus, QuotationStatus[]>> = {
+  DRAFT: ["PENDING_APPROVAL", "APPROVED", "SENT"],
+  PENDING_APPROVAL: ["APPROVED", "SENT"],
+  APPROVED: ["SENT"],
+};
+
+async function transitionQuotation(id: number, status: QuotationStatus): Promise<Quotation> {
+  const action = actionByStatus[status];
+  if (!action) throw new Error(`Unsupported quotation transition: ${status}`);
+  return (await apiClient.post<Quotation>(`/quotations/${id}/${action}`, {})).data;
+}
 
 export const quotationGateway: QuotationGateway = {
   async list(ticketId) {
@@ -56,8 +69,17 @@ export const quotationGateway: QuotationGateway = {
   },
 
   async transition(id, status) {
-    const action = actionByStatus[status];
-    if (!action) throw new Error(`Unsupported quotation transition: ${status}`);
-    return (await apiClient.post<Quotation>(`/quotations/${id}/${action}`, {})).data;
+    return transitionQuotation(id, status);
+  },
+
+  async publish(id, currentStatus) {
+    const steps = publicationSteps[currentStatus];
+    if (!steps) throw new Error(`Quotation cannot be published from status: ${currentStatus}`);
+    let quotation: Quotation | undefined;
+    for (const status of steps) {
+      quotation = await transitionQuotation(id, status);
+    }
+    if (!quotation) throw new Error("Quotation publication has no transition steps");
+    return quotation;
   },
 };

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { EmptyState, ErrorState, LoadingState, MutationError } from "../../components/ui/data-state";
@@ -19,6 +19,7 @@ export function QuotationPanel({
   approvedDiagnosis?: Diagnosis;
 }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const quotations = useQuotations(ticket.id);
   const [creating, setCreating] = useState(false);
 
@@ -30,8 +31,12 @@ export function QuotationPanel({
 
   const data = quotations.data ?? [];
   const latestQuotation = data[0];
+  const hasOpenQuotation = data.some((quotation) =>
+    ["DRAFT", "PENDING_APPROVAL", "APPROVED", "SENT"].includes(quotation.status) &&
+    !isQuotationExpired(quotation));
   const canCreate =
     user.role === "MANAGER" &&
+    !hasOpenQuotation &&
     (ticket.status === "WAITING_FOR_QUOTATION" || (
       ticket.status === "WAITING_FOR_CUSTOMER_APPROVAL" &&
       latestQuotation?.status === "EXPIRED"
@@ -55,12 +60,15 @@ export function QuotationPanel({
 
       {canCreate && !creating ? (
         <div className="alert alert--info">
-          Chẩn đoán đã được duyệt. Quản lý cần tạo, duyệt và gửi báo giá trước khi khách hàng có thể phản hồi.
+          Đây là dự toán từ tiền công và linh kiện dự kiến trong chẩn đoán. Hóa đơn cuối cùng chỉ giữ tiền công/dịch vụ và cộng linh kiện kho thực tế cấp trong lúc sửa.
         </div>
       ) : null}
 
       {creating ? (
-        <QuotationForm ticketId={ticket.id} onDone={() => setCreating(false)} />
+        <QuotationForm ticketId={ticket.id} onDone={(created) => {
+          setCreating(false);
+          void navigate(`/tickets/${ticket.id}/quotations/${created.id}`);
+        }} />
       ) : null}
 
       {user.role === "CUSTOMER" && latestQuotation ? (
@@ -111,5 +119,5 @@ export function CustomerQuotationResponse({
   if (quotation.status !== "SENT" || isQuotationExpired(quotation)) return null;
   const accepting = response === "ACCEPTED";
 
-  return <div className="customer-quote-response"><div><span className="eyebrow">Cần phản hồi</span><h3>Báo giá {formatMoney(quotation.totalAmount)}</h3><p>Hạn phản hồi: {formatDateTime(quotation.expiresAt)}. Kiểm tra hạng mục trước khi xác nhận.</p></div><div className="customer-quote-response__actions"><Link className="button button--secondary button--md" to={`/tickets/${ticketId}/quotations/${quotation.id}`}>Xem chi tiết</Link><Button onClick={() => setResponse("ACCEPTED")}>Chấp nhận báo giá</Button><Button variant="danger" onClick={() => setResponse("REJECTED")}>Từ chối</Button></div><MutationError error={transition.error} /><ConfirmDialog open={response !== null} title={accepting ? "Chấp nhận báo giá?" : "Từ chối báo giá?"} description={accepting ? `Bạn đồng ý với tổng giá trị ${formatMoney(quotation.totalAmount)} và các hạng mục đã gửi.` : "Báo giá hiện tại sẽ không thể được chấp nhận sau khi từ chối."} confirmLabel={accepting ? "Xác nhận chấp nhận" : "Xác nhận từ chối"} danger={!accepting} loading={transition.isPending} onClose={() => setResponse(null)} onConfirm={() => { if (response) transition.mutate(response, { onSuccess: () => setResponse(null) }); }} /></div>;
+  return <div className="customer-quote-response"><div><span className="eyebrow">Cần phản hồi</span><h3>Dự toán {formatMoney(quotation.totalAmount)}</h3><p>Hạn phản hồi: {formatDateTime(quotation.expiresAt)}. Tổng thanh toán cuối cùng sẽ dựa trên tiền công/dịch vụ và linh kiện kho thực tế cấp khi sửa.</p></div><div className="customer-quote-response__actions"><Link className="button button--secondary button--md" to={`/tickets/${ticketId}/quotations/${quotation.id}`}>Xem chi tiết</Link><Button onClick={() => setResponse("ACCEPTED")}>Đồng ý sửa chữa</Button><Button variant="danger" onClick={() => setResponse("REJECTED")}>Từ chối</Button></div><MutationError error={transition.error} /><ConfirmDialog open={response !== null} title={accepting ? "Đồng ý sửa chữa theo dự toán?" : "Từ chối dự toán?"} description={accepting ? `Bạn đồng ý tiến hành sửa theo dự toán ${formatMoney(quotation.totalAmount)}. Đây chưa phải hóa đơn cuối cùng; linh kiện chỉ tính theo số lượng kho thực tế cấp.` : "Dự toán hiện tại sẽ không thể được chấp nhận sau khi từ chối."} confirmLabel={accepting ? "Xác nhận đồng ý" : "Xác nhận từ chối"} danger={!accepting} loading={transition.isPending} onClose={() => setResponse(null)} onConfirm={() => { if (response) transition.mutate(response, { onSuccess: () => setResponse(null) }); }} /></div>;
 }

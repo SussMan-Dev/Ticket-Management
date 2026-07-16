@@ -12,7 +12,7 @@ import { FormField } from "../../components/ui/form-field";
 import { PageHeader } from "../../components/ui/page-header";
 import { Pagination } from "../../components/ui/pagination";
 import { StatusBadge } from "../../components/ui/status-badge";
-import { formatDateTime } from "../../lib/formatting/formatters";
+import { formatDateTime, formatMoney } from "../../lib/formatting/formatters";
 import { useAuth } from "../../lib/auth/use-auth";
 import type { PartRequest, PartRequestStatus } from "../../types/domain";
 import {
@@ -121,14 +121,16 @@ export function RequestItems({ request }: { request: PartRequest }) {
   return (
     <div className="table-wrap">
       <table>
-        <thead><tr><th>Linh kiện</th><th>Yêu cầu</th><th>Đã cấp</th><th>Còn lại</th><th>Tồn kho</th></tr></thead>
+        <thead><tr><th>Linh kiện</th><th>Đơn giá chốt</th><th>Yêu cầu</th><th>Đã cấp</th><th>Tiền đã cấp</th><th>Còn lại</th><th>Tồn kho</th></tr></thead>
         <tbody>
           {request.items.map((item) => (
-            <tr key={item.id}>
-              <td><strong>{item.part.name}</strong><small>{item.part.sku}</small></td>
-              <td>{item.requestedQuantity} {item.part.unit}</td>
-              <td>{item.fulfilledQuantity}</td>
-              <td>{item.remainingQuantity}</td>
+              <tr key={item.id}>
+                <td><strong>{item.part.name}</strong><small>{item.part.sku}</small></td>
+                <td>{formatMoney(item.unitPrice)}</td>
+                <td>{item.requestedQuantity} {item.part.unit}</td>
+                <td>{item.fulfilledQuantity}</td>
+                <td><strong>{formatMoney(item.fulfilledLineTotal)}</strong></td>
+                <td>{item.remainingQuantity}</td>
               <td>{item.part.quantityOnHand}</td>
             </tr>
           ))}
@@ -156,6 +158,7 @@ function InventoryRequestActions({ request }: { request: PartRequest }) {
   if (request.status === "PENDING") {
     return (
       <div className="review-actions">
+        <p className="read-only-note">Kiểm tra đúng linh kiện và số lượng trước khi duyệt. Đơn giá đã được chốt khi thợ tạo yêu cầu; số lượng kho thực tế cấp sẽ được cộng vào hóa đơn.</p>
         <div>
           <FormField label="Lý do từ chối" htmlFor={`reject-${request.id}`}>
             <textarea id={`reject-${request.id}`} rows={2} value={reason} onChange={(event) => setReason(event.target.value)} />

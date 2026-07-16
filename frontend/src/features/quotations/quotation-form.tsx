@@ -41,7 +41,7 @@ export function QuotationForm({
 }: {
   ticketId: number;
   quotation?: Quotation;
-  onDone?(): void;
+  onDone?(saved: Quotation): void;
 }) {
   const [catalogSearch, setCatalogSearch] = useState("");
   const catalog = useParts({
@@ -70,8 +70,9 @@ export function QuotationForm({
   const submit = async () => {
     if (!valid) return;
     const expiry = new Date(expiresAt).toISOString();
+    let saved: Quotation;
     if (!quotation) {
-      await create.mutateAsync({ expiresAt: expiry });
+      saved = await create.mutateAsync({ expiresAt: expiry });
     } else {
       const normalized: QuotationDraftItem[] = items.map((item) =>
         item.itemType === "PART"
@@ -82,9 +83,9 @@ export function QuotationForm({
               quantity: item.quantity,
               unitPrice: item.unitPrice,
             });
-      await update.mutateAsync({ expiresAt: expiry, items: normalized });
+      saved = await update.mutateAsync({ expiresAt: expiry, items: normalized });
     }
-    onDone?.();
+    onDone?.(saved);
   };
 
   const change = (index: number, patch: Partial<Line>) =>
@@ -93,11 +94,11 @@ export function QuotationForm({
 
   return (
     <Card className="form-card">
-      <h3>{quotation ? "Chỉnh sửa bản nháp" : "Tạo báo giá từ chẩn đoán"}</h3>
+      <h3>{quotation ? "Chỉnh sửa dự toán" : "Tạo dự toán chẩn đoán"}</h3>
       <p className="muted">
         {quotation
-          ? "Giá linh kiện được cập nhật theo danh mục khi lưu; tổng tiền được tính tự động."
-          : "Hệ thống sẽ tạo các hạng mục từ bản chẩn đoán đã được duyệt."}
+          ? "Bạn có thể điều chỉnh tiền công, chi phí dịch vụ và linh kiện dự kiến. Đây vẫn là dự toán, không phải hóa đơn cuối cùng."
+          : "Hệ thống lấy tiền công và linh kiện dự kiến từ chẩn đoán. Linh kiện này không tạo yêu cầu kho; hóa đơn chỉ cộng số lượng kho thực tế cấp trong lúc sửa."}
       </p>
       <MutationError error={mutation.error} />
       <FormField label="Hạn phản hồi" htmlFor="quote-expiry" required>
@@ -132,20 +133,6 @@ export function QuotationForm({
               >
                 + Dịch vụ
               </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={() => setItems((current) => [...current, {
-                  itemType: "PART",
-                  partId: null,
-                  description: "",
-                  quantity: 1,
-                  unitPrice: 0,
-                }])}
-              >
-                + Linh kiện
-              </Button>
             </div>
           </div>
           {items.some((item) => item.itemType === "PART") ? (
@@ -170,7 +157,7 @@ export function QuotationForm({
                   })}
                 >
                   <option value="LABOR">Dịch vụ</option>
-                  <option value="PART">Linh kiện</option>
+                  {item.itemType === "PART" ? <option value="PART">Linh kiện</option> : null}
                   <option value="OTHER">Chi phí khác</option>
                 </select>
               </FormField>
