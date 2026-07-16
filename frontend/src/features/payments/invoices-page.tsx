@@ -13,6 +13,14 @@ import { INVOICE_PAYMENT_STATUSES, type InvoicePaymentStatus } from "../../types
 import { useTickets } from "../repair-tickets/tickets.api";
 import { useCreateInvoice, useInvoices } from "./payments.api";
 
+const paymentStatusLabels: Record<InvoicePaymentStatus, string> = {
+  UNPAID: "Chưa thanh toán",
+  PARTIALLY_PAID: "Đã thanh toán một phần",
+  PAID: "Đã thanh toán",
+  REFUNDED: "Đã hoàn tiền",
+  PARTIALLY_REFUNDED: "Đã hoàn một phần",
+};
+
 export function InvoicesPage() {
   const { user } = useAuth();
   const [page, setPage] = useState(1);
@@ -23,12 +31,12 @@ export function InvoicesPage() {
   if (!user) return null;
 
   return <>
-    <PageHeader eyebrow="Phase 9 · Billing" title="Hóa đơn & thanh toán" description="Số dư được server tính từ báo giá đã chấp nhận; mọi payment và refund đều được lưu thành lịch sử tài chính." actions={user.role === "CASHIER" ? <Button onClick={() => setCreating((value) => !value)}>{creating ? "Đóng" : "+ Lập hóa đơn"}</Button> : undefined} />
+    <PageHeader eyebrow={user.role === "CUSTOMER" ? "Chi phí dịch vụ" : "Thanh toán"} title={user.role === "CUSTOMER" ? "Hóa đơn của tôi" : "Hóa đơn & thanh toán"} description={user.role === "CUSTOMER" ? "Xem tổng chi phí, số tiền đã thanh toán và số tiền còn lại của từng yêu cầu." : "Tra cứu hóa đơn, ghi nhận khoản thu và theo dõi số tiền còn lại."} actions={user.role === "CASHIER" ? <Button onClick={() => setCreating((value) => !value)}>{creating ? "Đóng" : "+ Lập hóa đơn"}</Button> : undefined} />
     {creating ? <CreateInvoiceCard onDone={() => setCreating(false)} /> : null}
     <Card>
       <div className="toolbar toolbar--filters">
         <label className="search-field"><span className="sr-only">Tìm hóa đơn</span><input value={search} placeholder="Mã hóa đơn, mã phiếu, khách hàng…" onChange={(event) => { setSearch(event.target.value); setPage(1); }} /></label>
-        <select aria-label="Lọc trạng thái thanh toán" value={status} onChange={(event) => { setStatus(event.target.value as InvoicePaymentStatus | ""); setPage(1); }}><option value="">Mọi trạng thái</option>{INVOICE_PAYMENT_STATUSES.map((value) => <option value={value} key={value}>{value}</option>)}</select>
+        <select aria-label="Lọc trạng thái thanh toán" value={status} onChange={(event) => { setStatus(event.target.value as InvoicePaymentStatus | ""); setPage(1); }}><option value="">Mọi trạng thái</option>{INVOICE_PAYMENT_STATUSES.map((value) => <option value={value} key={value}>{paymentStatusLabels[value]}</option>)}</select>
       </div>
       {invoices.isLoading ? <LoadingState /> : invoices.isError ? <ErrorState error={invoices.error} retry={() => void invoices.refetch()} /> : (invoices.data?.data ?? []).length === 0 ? <EmptyState title="Chưa có hóa đơn phù hợp" description={user.role === "CASHIER" ? "Lập hóa đơn cho phiếu đã hoàn tất kỹ thuật." : "Hóa đơn sẽ xuất hiện tại đây sau khi thu ngân phát hành."} /> : <div className="table-wrap"><table><thead><tr><th>Hóa đơn</th><th>Khách hàng</th><th>Tổng tiền</th><th>Đã thanh toán</th><th>Còn lại</th><th>Trạng thái</th><th /></tr></thead><tbody>{(invoices.data?.data ?? []).map((invoice) => <tr key={invoice.id}><td><strong>{invoice.invoiceCode}</strong><small>{invoice.ticket.ticketCode} · {formatDateTime(invoice.createdAt)}</small></td><td><strong>{invoice.customer.fullName}</strong><small>{invoice.customer.email}</small></td><td>{formatMoney(invoice.totalAmount)}</td><td>{formatMoney(invoice.paidAmount)}</td><td><strong>{formatMoney(invoice.balanceAmount)}</strong></td><td><StatusBadge value={invoice.paymentStatus} /></td><td><Link className="button button--ghost button--sm" to={`/invoices/${invoice.id}`}>Chi tiết →</Link></td></tr>)}</tbody></table></div>}
       <Pagination page={page} totalPages={invoices.data?.meta.totalPages ?? 1} onChange={setPage} />

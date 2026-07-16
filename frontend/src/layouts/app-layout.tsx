@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { AppFooter } from "../components/ui/app-footer";
@@ -16,6 +16,28 @@ export function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDrawerOpen(false);
+    };
+    const closeOnDesktop = () => {
+      if (window.innerWidth > 1080) setDrawerOpen(false);
+    };
+
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", closeOnEscape);
+    window.addEventListener("resize", closeOnDesktop);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+      window.removeEventListener("resize", closeOnDesktop);
+    };
+  }, [drawerOpen]);
+
   if (!user) return null;
 
   const handleLogout = async () => {
@@ -26,7 +48,10 @@ export function AppLayout() {
   return (
     <div className="app-shell">
       <aside className={`sidebar ${drawerOpen ? "sidebar--open" : ""}`} aria-label="Điều hướng chính">
-        <div className="brand"><span className="brand__mark">EF</span><span><strong>ElectronicFixer</strong><small>Repair operations</small></span></div>
+        <div className="sidebar__brand-row">
+          <div className="brand"><span className="brand__mark">EF</span><span><strong>ElectronicFixer</strong><small>Sửa chữa rõ ràng, dễ theo dõi</small></span></div>
+          <button className="sidebar__close" type="button" aria-label="Đóng menu" onClick={() => setDrawerOpen(false)}>×</button>
+        </div>
         <nav className="sidebar__nav">
           <span className="sidebar__label">Không gian làm việc</span>
           {navigationForRole(user.role).map((item) => (
@@ -42,7 +67,7 @@ export function AppLayout() {
         <header className="topbar">
           <div className="topbar__inner">
             <button className="menu-button" aria-label="Mở menu" aria-expanded={drawerOpen} onClick={() => setDrawerOpen(true)}>☰</button>
-            <div className="topbar__context"><span className="status-dot" />Hệ thống vận hành</div>
+            <div className="topbar__context"><span className="status-dot" />Sẵn sàng phục vụ</div>
             <div className="topbar__user"><NotificationBell /><UserAvatar fullName={user.fullName} src={user.avatarUrl} size="small" /><span className="topbar__user-copy"><strong>{user.fullName}</strong><small>{roleLabels[user.role]}</small></span></div>
           </div>
         </header>

@@ -49,7 +49,7 @@ const actionCopy: Record<
     label: "Chấp nhận báo giá",
     status: "ACCEPTED",
     title: "Chấp nhận báo giá?",
-    description: "Xác nhận đồng ý với nội dung và tổng tiền do server cung cấp.",
+    description: "Xác nhận bạn đồng ý với các hạng mục và tổng chi phí trong báo giá.",
   },
   REJECT: {
     label: "Từ chối báo giá",
@@ -59,6 +59,12 @@ const actionCopy: Record<
     danger: true,
   },
 };
+
+const itemTypeLabels = {
+  LABOR: "Tiền công",
+  PART: "Linh kiện",
+  OTHER: "Chi phí khác",
+} as const;
 
 export function QuotationDetailPage() {
   const quotationId = Number(useParams().quotationId);
@@ -102,8 +108,8 @@ export function QuotationDetailPage() {
     <>
       <PageHeader
         eyebrow={`Báo giá · Phiên bản ${data.version}`}
-        title={`Báo giá cho phiếu #${ticketId}`}
-        description="Hạng mục, đơn giá và tổng tiền dưới đây được lấy từ response của server."
+        title="Chi tiết báo giá sửa chữa"
+        description="Kiểm tra từng hạng mục, đơn giá và tổng chi phí trước khi xác nhận."
         actions={(
           <Link className="button button--secondary button--md" to={`/tickets/${ticketId}`}>
             ← Về phiếu
@@ -132,7 +138,7 @@ export function QuotationDetailPage() {
               <tbody>
                 {data.items.map((item) => (
                   <tr key={item.id}>
-                    <td>{item.itemType}</td>
+                    <td>{itemTypeLabels[item.itemType]}</td>
                     <td>{item.description}</td>
                     <td>{item.quantity}</td>
                     <td>{formatMoney(item.unitPrice)}</td>
@@ -157,7 +163,7 @@ export function QuotationDetailPage() {
           ) : null}
           {actions.length === 0 ? (
             <p className="read-only-note">
-              Phiên bản này ở chế độ chỉ đọc theo vai trò, trạng thái hoặc hạn phản hồi.
+              Báo giá này hiện không cần thêm thao tác hoặc đã qua thời hạn phản hồi.
             </p>
           ) : (
             <div className="form-actions">

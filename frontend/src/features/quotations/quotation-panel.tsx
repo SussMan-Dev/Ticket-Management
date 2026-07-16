@@ -42,9 +42,9 @@ export function QuotationPanel({
     <section className="detail-section" aria-labelledby="quotation-title">
       <div className="section-heading">
         <div>
-          <span className="eyebrow">Phase 6 · Dữ liệu API</span>
+          <span className="eyebrow">Chi phí sửa chữa</span>
           <h2 id="quotation-title">Lịch sử báo giá</h2>
-          <p>Mỗi phiên bản giữ nguyên hạng mục và đơn giá đã được server chụp tại thời điểm lưu.</p>
+          <p>Mỗi lần điều chỉnh được lưu riêng để bạn dễ theo dõi và đối chiếu.</p>
         </div>
         {canCreate ? (
           <Button variant="secondary" onClick={() => setCreating((value) => !value)}>

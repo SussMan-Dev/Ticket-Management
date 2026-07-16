@@ -16,8 +16,8 @@ export function AppFooter({ compact = false }: AppFooterProps) {
           </span>
         </div>
         <div className="site-footer__meta">
-          <span className="site-footer__status"><i aria-hidden="true" /> Dữ liệu được bảo vệ theo vai trò</span>
-          <small>© {currentYear} ElectronicFixer. All rights reserved.</small>
+          <span className="site-footer__status"><i aria-hidden="true" /> Thông tin của bạn được bảo vệ an toàn</span>
+          <small>© {currentYear} ElectronicFixer. Đã đăng ký bản quyền.</small>
         </div>
       </div>
     </footer>

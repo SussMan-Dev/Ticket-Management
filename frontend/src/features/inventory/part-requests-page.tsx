@@ -29,7 +29,18 @@ const filterStatuses: Array<PartRequestStatus | ""> = [
   "PARTIALLY_FULFILLED",
   "FULFILLED",
   "REJECTED",
+  "CANCELLED",
 ];
+
+const requestStatusLabels: Record<PartRequestStatus | "", string> = {
+  "": "Tất cả",
+  PENDING: "Chờ duyệt",
+  APPROVED: "Đã duyệt",
+  PARTIALLY_FULFILLED: "Đã cấp một phần",
+  FULFILLED: "Đã cấp đủ",
+  REJECTED: "Đã từ chối",
+  CANCELLED: "Đã hủy",
+};
 
 export function PartRequestsPage() {
   const { user } = useAuth();
@@ -41,15 +52,18 @@ export function PartRequestsPage() {
     status: status || undefined,
   });
   if (!user) return null;
+  const pageCopy = user.role === "TECHNICIAN"
+    ? { eyebrow: "Công việc kỹ thuật", description: "Theo dõi các yêu cầu linh kiện bạn đã gửi và số lượng đã được cấp." }
+    : user.role === "INVENTORY_STAFF"
+      ? { eyebrow: "Cấp phát kho", description: "Duyệt yêu cầu, cấp đúng số lượng và theo dõi phần còn lại." }
+      : { eyebrow: "Theo dõi kho", description: "Theo dõi tình trạng phê duyệt và cấp linh kiện cho các phiếu sửa chữa." };
 
   return (
     <>
       <PageHeader
-        eyebrow="Phase 7 · Part requests"
+        eyebrow={pageCopy.eyebrow}
         title="Yêu cầu linh kiện"
-        description={user.role === "TECHNICIAN"
-          ? "Chỉ các request do bạn tạo được backend trả về."
-          : "Theo dõi duyệt, cấp một phần và hoàn tất cấp linh kiện."}
+        description={pageCopy.description}
       />
       <Card>
         <div className="toolbar">
@@ -63,7 +77,7 @@ export function PartRequestsPage() {
               }}
             >
               {filterStatuses.map((value) => (
-                <option key={value || "ALL"} value={value}>{value || "Tất cả"}</option>
+                <option key={value || "ALL"} value={value}>{requestStatusLabels[value]}</option>
               ))}
             </select>
           </FormField>
@@ -78,7 +92,7 @@ export function PartRequestsPage() {
               <Card key={request.id} className="diagnosis-card">
                 <div className="section-heading">
                   <div>
-                    <span className="eyebrow">Request #{request.id}</span>
+                    <span className="eyebrow">Yêu cầu #{request.id}</span>
                     <h2>{user.role === "INVENTORY_STAFF" ? request.ticket.ticketCode : <Link to={`/tickets/${request.ticket.id}`}>{request.ticket.ticketCode}</Link>}</h2>
                     <p>{request.requestedBy.fullName} · {formatDateTime(request.createdAt)}</p>
                   </div>
@@ -148,7 +162,7 @@ function InventoryRequestActions({ request }: { request: PartRequest }) {
           </FormField>
           <Button variant="danger" disabled={reason.trim().length < 3} loading={reject.isPending} onClick={() => reject.mutate(reason.trim())}>Từ chối</Button>
         </div>
-        <Button loading={approve.isPending} onClick={() => approve.mutate("Stock reviewed")}>Duyệt request</Button>
+        <Button loading={approve.isPending} onClick={() => approve.mutate("Đã kiểm tra tồn kho")}>Duyệt yêu cầu</Button>
         <MutationError error={approve.error ?? reject.error} />
       </div>
     );

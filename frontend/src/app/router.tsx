@@ -2,7 +2,6 @@ import { createBrowserRouter } from "react-router-dom";
 import { lazy } from "react";
 import { AppLayout } from "../layouts/app-layout";
 import { AuthLayout } from "../layouts/auth-layout";
-import { ExtensionPage } from "../routes/extension-page";
 import { ForbiddenPage, NotFoundPage, UnauthorizedPage } from "../routes/error-pages";
 import { GuestRoute, ProtectedRoute, RoleRoute } from "../routes/route-guards";
 
@@ -52,7 +51,6 @@ export const router = createBrowserRouter([
       { path: "tickets/new", element: <RoleRoute roles={["CUSTOMER", "RECEPTIONIST", "MANAGER"]}><TicketCreatePage /></RoleRoute> },
       { path: "tickets/:ticketId", element: <RoleRoute roles={["CUSTOMER", "RECEPTIONIST", "TECHNICIAN", "MANAGER"]}><TicketDetailPage /></RoleRoute> },
       { path: "tickets/:ticketId/quotations/:quotationId", element: <RoleRoute roles={["CUSTOMER", "TECHNICIAN", "MANAGER"]}><QuotationDetailPage /></RoleRoute> },
-      { path: "extension", element: <RoleRoute roles={["CASHIER"]}><ExtensionPage /></RoleRoute> },
       { path: "reports", element: <RoleRoute roles={["MANAGER", "INVENTORY_STAFF"]}><ReportsPage /></RoleRoute> },
     ],
   },

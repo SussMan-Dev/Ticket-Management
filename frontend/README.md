@@ -12,6 +12,8 @@ Production-oriented React client for the Repair Ticket Management System. The ap
 
 The shared application shell keeps the sticky header, page content, and footer on one responsive content grid. Cards, forms, data tables, and page actions use common spacing and alignment rules across desktop and mobile views; authentication screens reuse the same branded footer in a compact layout.
 
+The customer home follows a service-tracking portal pattern: clear repair steps, prominent request/progress actions, a latest-status summary, and direct links to devices and invoices. Staff dashboards use role-specific visual themes, three-step workflow guidance, and shortcuts for reception, technical work, management, administration, inventory, and cashier tasks. User-facing pages use plain Vietnamese instead of implementation terms and translate stored status/type codes before display. All monetary values are rendered consistently with the `VNĐ` suffix. The mobile drawer supports an explicit close control, Escape, scroll locking, and keyboard-visible focus states.
+
 ## Setup
 
 Requirements: Node.js 20+ and the backend running locally.
@@ -31,7 +33,6 @@ The Vite development server runs at `http://localhost:5173` and proxies `/api` t
 |---|---|---|
 | `VITE_API_BASE_URL` | `/api/v1` | REST API prefix |
 | `VITE_API_PROXY_TARGET` | `http://localhost:3000` | Development proxy target |
-| `VITE_CURRENCY` | `VND` | ISO 4217 display currency; no currency is assumed in code |
 | `VITE_TIME_ZONE` | `Asia/Bangkok` | IANA display time zone; API values remain UTC strings |
 
 Do not put secrets in Vite environment variables: every `VITE_*` value is public in the browser bundle.

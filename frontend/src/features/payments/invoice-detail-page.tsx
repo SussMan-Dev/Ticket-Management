@@ -30,7 +30,7 @@ export function InvoiceDetailPage() {
     <InvoiceSummary invoice={data} />
     {canCollect ? <PaymentForm invoice={data} /> : null}
     <Card>
-      <div className="section-heading"><div><h2>Lịch sử thanh toán</h2><p>Payment đã hoàn tất không được chỉnh sửa; điều chỉnh chỉ qua refund có phê duyệt.</p></div></div>
+      <div className="section-heading"><div><h2>Lịch sử thanh toán</h2><p>Mỗi khoản thu hoặc hoàn tiền đều được lưu lại để dễ dàng đối chiếu.</p></div></div>
       {payments.isLoading ? <LoadingState /> : payments.isError ? <ErrorState error={payments.error} retry={() => void payments.refetch()} /> : (payments.data ?? []).length === 0 ? <EmptyState title="Chưa có thanh toán" description="Hóa đơn chưa ghi nhận khoản thu nào." /> : <PaymentHistory invoiceId={id} payments={payments.data ?? []} />}
     </Card>
   </>;
@@ -39,11 +39,11 @@ export function InvoiceDetailPage() {
 function InvoiceSummary({ invoice }: { invoice: Invoice }) {
   return <>
     <div className="metric-grid billing-metrics">
-      <Card><span className="metric__label">Tổng hóa đơn</span><strong className="metric__value">{formatMoney(invoice.totalAmount)}</strong><small>Subtotal {formatMoney(invoice.subtotal)}</small></Card>
+      <Card><span className="metric__label">Tổng hóa đơn</span><strong className="metric__value">{formatMoney(invoice.totalAmount)}</strong><small>Trước giảm giá và thuế: {formatMoney(invoice.subtotal)}</small></Card>
       <Card><span className="metric__label">Đã thanh toán</span><strong className="metric__value">{formatMoney(invoice.paidAmount)}</strong><small>Cập nhật {formatDateTime(invoice.updatedAt)}</small></Card>
-      <Card><span className="metric__label">Còn phải thu</span><strong className="metric__value">{formatMoney(invoice.balanceAmount)}</strong><small>{invoice.balanceAmount === 0 ? "Đã đủ điều kiện tài chính" : "Có thể thu từng phần"}</small></Card>
+      <Card><span className="metric__label">Còn lại</span><strong className="metric__value">{formatMoney(invoice.balanceAmount)}</strong><small>{invoice.balanceAmount === 0 ? "Đã thanh toán đủ" : "Có thể thanh toán từng phần"}</small></Card>
     </div>
-    <Card className="billing-detail-card"><dl className="detail-list detail-list--two"><div><dt>Khách hàng</dt><dd>{invoice.customer.fullName}<small>{invoice.customer.email}</small></dd></div><div><dt>Phiếu sửa chữa</dt><dd>{invoice.ticket.ticketCode}<small>{invoice.ticket.status}</small></dd></div><div><dt>Giảm giá</dt><dd>{formatMoney(invoice.discountAmount)}</dd></div><div><dt>Thuế</dt><dd>{formatMoney(invoice.taxAmount)}</dd></div><div><dt>Người lập</dt><dd>{invoice.createdBy.fullName}</dd></div><div><dt>Mã hóa đơn</dt><dd>{invoice.invoiceCode}</dd></div></dl></Card>
+    <Card className="billing-detail-card"><dl className="detail-list detail-list--two"><div><dt>Khách hàng</dt><dd>{invoice.customer.fullName}<small>{invoice.customer.email}</small></dd></div><div><dt>Phiếu sửa chữa</dt><dd>{invoice.ticket.ticketCode}<small><StatusBadge value={invoice.ticket.status} /></small></dd></div><div><dt>Giảm giá</dt><dd>{formatMoney(invoice.discountAmount)}</dd></div><div><dt>Thuế</dt><dd>{formatMoney(invoice.taxAmount)}</dd></div><div><dt>Người lập</dt><dd>{invoice.createdBy.fullName}</dd></div><div><dt>Mã hóa đơn</dt><dd>{invoice.invoiceCode}</dd></div></dl></Card>
   </>;
 }
 
@@ -57,10 +57,10 @@ function PaymentForm({ invoice }: { invoice: Invoice }) {
     reset({ amount: invoice.balanceAmount, method: "CASH", transactionReference: "", note: "" });
   });
   return <Card className="form-card billing-form-card">
-    <div className="section-heading"><div><h2>Ghi nhận thanh toán</h2><p>Tối đa {formatMoney(invoice.balanceAmount)}; server khóa hóa đơn và kiểm tra lại số dư.</p></div></div>
+    <div className="section-heading"><div><h2>Ghi nhận thanh toán</h2><p>Số tiền tối đa có thể thu: {formatMoney(invoice.balanceAmount)}. Hệ thống sẽ kiểm tra lại trước khi lưu.</p></div></div>
     <MutationError error={create.error} />
     <form onSubmit={(event) => void submit(event)}><div className="form-grid">
-      <FormField label="Số tiền" htmlFor="payment-amount" required error={errors.amount?.message}><input id="payment-amount" type="number" min="0.01" max={invoice.balanceAmount} step="0.01" {...register("amount", { valueAsNumber: true })} /></FormField>
+      <FormField label="Số tiền (VNĐ)" htmlFor="payment-amount" required error={errors.amount?.message}><input id="payment-amount" type="number" min="0.01" max={invoice.balanceAmount} step="0.01" {...register("amount", { valueAsNumber: true })} /></FormField>
       <FormField label="Phương thức" htmlFor="payment-method" required error={errors.method?.message}><select id="payment-method" {...register("method")}>{Object.entries(methodLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></FormField>
       <FormField label="Mã đối soát" htmlFor="payment-reference" error={errors.transactionReference?.message} hint={method === "CASH" ? "Không bắt buộc với tiền mặt." : "Không nhập số thẻ hoặc dữ liệu thanh toán nhạy cảm."}><input id="payment-reference" maxLength={191} {...register("transactionReference")} /></FormField>
       <FormField label="Ghi chú" htmlFor="payment-note" error={errors.note?.message}><input id="payment-note" maxLength={5_000} {...register("note")} /></FormField>
@@ -83,7 +83,7 @@ function RefundForm({ invoiceId, payment, onDone }: { invoiceId: number; payment
   const { register, handleSubmit, formState: { errors } } = useForm<RefundFormValues>({ resolver: zodResolver(refundFormSchema), defaultValues: { managerApprovalId: 0, reason: "" } });
   const submit = handleSubmit(async (values) => { await refund.mutateAsync({ paymentId: payment.id, input: values }); onDone(); });
   return <div className="refund-box">
-    <div className="section-heading"><div><h3>Hoàn {formatMoney(payment.amount)}</h3><p>{payment.paymentCode} sẽ được đánh dấu REFUNDED; bản ghi gốc không bị xóa.</p></div><Button variant="ghost" size="sm" onClick={onDone}>Đóng</Button></div>
+    <div className="section-heading"><div><h3>Hoàn {formatMoney(payment.amount)}</h3><p>Giao dịch {payment.paymentCode} sẽ được đánh dấu đã hoàn tiền và vẫn được giữ trong lịch sử.</p></div><Button variant="ghost" size="sm" onClick={onDone}>Đóng</Button></div>
     <MutationError error={refund.error ?? approvers.error} />
     <form onSubmit={(event) => void submit(event)}><div className="form-grid">
       <FormField label="Quản lý phê duyệt" htmlFor="refund-approver" required error={errors.managerApprovalId?.message}><select id="refund-approver" {...register("managerApprovalId", { valueAsNumber: true })}><option value={0}>Chọn quản lý đang hoạt động</option>{(approvers.data ?? []).map((manager) => <option value={manager.id} key={manager.id}>{manager.fullName} · #{manager.id}</option>)}</select></FormField>

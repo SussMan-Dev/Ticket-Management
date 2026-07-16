@@ -43,7 +43,7 @@ export function RepairActionPanel({ ticket }: { ticket: RepairTicket }) {
   return (
     <section className="detail-section" aria-labelledby="repair-actions-title">
       <div className="section-heading">
-        <div><span className="eyebrow">Phase 8</span><h2 id="repair-actions-title">Sửa chữa & kiểm thử</h2></div>
+        <div><span className="eyebrow">Tiến độ kỹ thuật</span><h2 id="repair-actions-title">Sửa chữa & kiểm tra</h2></div>
         <StatusBadge value={ticket.status} />
       </div>
 
@@ -55,7 +55,7 @@ export function RepairActionPanel({ ticket }: { ticket: RepairTicket }) {
         : repairLogs.map((log) => (
           <Card key={log.id} className="diagnosis-card">
             <div className="section-heading">
-              <strong>Log #{log.id} · {log.actionDescription}</strong>
+              <strong>Công việc #{log.id} · {log.actionDescription}</strong>
               <span>{log.finishedAt ? "Đã hoàn tất" : "Đang thực hiện"}</span>
             </div>
             {log.technician ? <small>Kỹ thuật viên: {log.technician.fullName}</small> : null}
@@ -74,10 +74,10 @@ export function RepairActionPanel({ ticket }: { ticket: RepairTicket }) {
           </Card>
         ))}
 
-      <div className="section-heading"><h3>Kết quả kiểm thử</h3><span>{testResults.length} kết quả</span></div>
+      <div className="section-heading"><h3>Kết quả kiểm tra</h3><span>{testResults.length} kết quả</span></div>
       {technicianCanTest ? <CreateTestResultForm ticketId={ticket.id} /> : null}
       {testResults.length === 0
-        ? <EmptyState title="Chưa có kết quả kiểm thử" description="Cần ít nhất một repair log hoàn tất trước khi bắt đầu kiểm thử." />
+        ? <EmptyState title="Chưa có kết quả kiểm tra" description="Kết quả sẽ được ghi nhận sau khi có ít nhất một công việc sửa chữa hoàn tất." />
         : <div className="table-wrap"><table><thead><tr><th>Bài kiểm tra</th><th>Kết quả</th><th>Người kiểm tra</th><th>Thời gian</th></tr></thead><tbody>{testResults.map((result) => (
           <tr key={result.id}>
             <td><strong>{result.testName}</strong>{result.note ? <small>{result.note}</small> : null}</td>
@@ -166,9 +166,9 @@ function CreateRepairLogForm({ ticketId, logs }: { ticketId: number; logs: Repai
       ))}
       <div className="button-row">
         <Button type="button" size="sm" variant="secondary" disabled={partOptions.length === 0} onClick={() => setParts((current) => [...current, { partId: 0, quantity: 1 }])}>+ Ghi linh kiện sử dụng</Button>
-        <label><input type="checkbox" checked={finishNow} onChange={(event) => setFinishNow(event.target.checked)} /> Hoàn tất log ngay</label>
+        <label><input type="checkbox" checked={finishNow} onChange={(event) => setFinishNow(event.target.checked)} /> Đánh dấu công việc đã hoàn tất</label>
       </div>
-      <Button disabled={actionDescription.trim().length < 3 || !validParts} loading={create.isPending} onClick={() => void submit()}>Lưu repair log</Button>
+      <Button disabled={actionDescription.trim().length < 3 || !validParts} loading={create.isPending} onClick={() => void submit()}>Lưu công việc</Button>
     </Card>
   );
 }
@@ -181,7 +181,7 @@ function FinishRepairLog({ ticketId, log }: { ticketId: number; log: RepairLog }
       <FormField label="Kết quả hoàn tất" htmlFor={`finish-log-${log.id}`} required>
         <textarea id={`finish-log-${log.id}`} rows={2} value={result} onChange={(event) => setResult(event.target.value)} />
       </FormField>
-      <Button size="sm" disabled={result.trim().length < 1} loading={update.isPending} onClick={() => update.mutate({ result: result.trim(), finishedAt: new Date().toISOString() })}>Hoàn tất log</Button>
+      <Button size="sm" disabled={result.trim().length < 1} loading={update.isPending} onClick={() => update.mutate({ result: result.trim(), finishedAt: new Date().toISOString() })}>Hoàn tất công việc</Button>
       <MutationError error={update.error} />
     </div>
   );
@@ -205,7 +205,7 @@ function CreateTestResultForm({ ticketId }: { ticketId: number }) {
         <FormField label="Kết quả" htmlFor="test-result-value" required><select id="test-result-value" value={result} onChange={(event) => setResult(event.target.value as TestResultValue)}><option value="PASS">Đạt</option><option value="FAIL">Không đạt</option></select></FormField>
       </div>
       <FormField label="Ghi chú" htmlFor="test-result-note"><textarea id="test-result-note" rows={2} value={note} onChange={(event) => setNote(event.target.value)} /></FormField>
-      <Button disabled={testName.trim().length < 2} loading={create.isPending} onClick={() => void submit()}>Ghi kết quả kiểm thử</Button>
+      <Button disabled={testName.trim().length < 2} loading={create.isPending} onClick={() => void submit()}>Ghi kết quả kiểm tra</Button>
       <MutationError error={create.error} />
     </Card>
   );
@@ -216,10 +216,10 @@ function CompleteTesting({ ticketId }: { ticketId: number }) {
   const [reason, setReason] = useState("");
   return (
     <Card className="form-card">
-      <h3>Kết thúc vòng kiểm thử</h3>
-      <p className="read-only-note">Backend dùng kết quả mới nhất của từng tên bài kiểm tra. Tất cả PASS sẽ hoàn tất ticket; còn FAIL sẽ trả ticket về sửa chữa.</p>
+      <h3>Kết thúc vòng kiểm tra</h3>
+      <p className="read-only-note">Hệ thống dùng kết quả mới nhất của từng bài kiểm tra. Nếu tất cả đều đạt, thiết bị được đánh dấu hoàn tất; nếu còn mục chưa đạt, phiếu sẽ quay lại bước sửa chữa.</p>
       <FormField label="Ghi chú kết luận" htmlFor="complete-testing-reason"><textarea id="complete-testing-reason" rows={2} value={reason} onChange={(event) => setReason(event.target.value)} /></FormField>
-      <Button loading={complete.isPending} onClick={() => complete.mutate(reason.trim() || undefined)}>Hoàn tất kiểm thử</Button>
+      <Button loading={complete.isPending} onClick={() => complete.mutate(reason.trim() || undefined)}>Hoàn tất kiểm tra</Button>
       <MutationError error={complete.error} />
     </Card>
   );

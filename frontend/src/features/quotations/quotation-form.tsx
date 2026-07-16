@@ -96,8 +96,8 @@ export function QuotationForm({
       <h3>{quotation ? "Chỉnh sửa bản nháp" : "Tạo báo giá từ chẩn đoán"}</h3>
       <p className="muted">
         {quotation
-          ? "Giá linh kiện được lấy lại từ catalog khi lưu; tổng tiền do server tính."
-          : "Server sẽ chụp tiền công và linh kiện từ chẩn đoán đã duyệt."}
+          ? "Giá linh kiện được cập nhật theo danh mục khi lưu; tổng tiền được tính tự động."
+          : "Hệ thống sẽ tạo các hạng mục từ bản chẩn đoán đã được duyệt."}
       </p>
       <MutationError error={mutation.error} />
       <FormField label="Hạn phản hồi" htmlFor="quote-expiry" required>
@@ -115,7 +115,7 @@ export function QuotationForm({
           <div className="section-heading">
             <div>
               <h3>Hạng mục báo giá</h3>
-              <p>PART chỉ gửi ID và số lượng; mô tả, đơn giá được server chụp lại.</p>
+              <p>Với linh kiện, tên và đơn giá sẽ được cập nhật theo danh mục khi lưu.</p>
             </div>
             <div className="form-actions">
               <Button
@@ -149,7 +149,7 @@ export function QuotationForm({
             </div>
           </div>
           {items.some((item) => item.itemType === "PART") ? (
-            <FormField label="Tìm catalog" htmlFor="quotation-part-search">
+            <FormField label="Tìm linh kiện" htmlFor="quotation-part-search">
               <input
                 id="quotation-part-search"
                 value={catalogSearch}
@@ -169,9 +169,9 @@ export function QuotationForm({
                     partId: event.target.value === "PART" ? item.partId : null,
                   })}
                 >
-                  <option value="LABOR">LABOR</option>
-                  <option value="PART">PART</option>
-                  <option value="OTHER">OTHER</option>
+                  <option value="LABOR">Dịch vụ</option>
+                  <option value="PART">Linh kiện</option>
+                  <option value="OTHER">Chi phí khác</option>
                 </select>
               </FormField>
               {item.itemType === "PART" ? (
@@ -183,7 +183,7 @@ export function QuotationForm({
                   >
                     <option value="">Chọn linh kiện</option>
                     {item.partId && !(catalog.data?.data ?? []).some((part) => part.id === item.partId) ? (
-                      <option value={item.partId}>{item.description || `Part #${item.partId}`}</option>
+                      <option value={item.partId}>{item.description || `Linh kiện #${item.partId}`}</option>
                     ) : null}
                     {(catalog.data?.data ?? []).map((part) => (
                       <option key={part.id} value={part.id}>
@@ -212,11 +212,11 @@ export function QuotationForm({
                 />
               </FormField>
               {item.itemType === "PART" ? (
-                <FormField label="Đơn giá catalog" htmlFor={`quote-price-${index}`}>
+                <FormField label="Đơn giá linh kiện (VNĐ)" htmlFor={`quote-price-${index}`}>
                   <input id={`quote-price-${index}`} value={item.unitPrice} disabled />
                 </FormField>
               ) : (
-                <FormField label="Đơn giá" htmlFor={`quote-price-${index}`} required>
+                <FormField label="Đơn giá (VNĐ)" htmlFor={`quote-price-${index}`} required>
                   <input
                     id={`quote-price-${index}`}
                     type="number"

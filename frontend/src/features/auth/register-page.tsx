@@ -88,7 +88,7 @@ export function RegisterPage() {
             </FormField>
           </div>
         </div>
-        <Button type="submit" loading={isSubmitting} className="button--full">Tạo tài khoản an toàn</Button>
+        <Button type="submit" loading={isSubmitting} className="button--full">Tạo tài khoản</Button>
       </form>
       <p className="auth-switch">Đã có tài khoản? <Link to="/login">Đăng nhập</Link></p>
     </div>

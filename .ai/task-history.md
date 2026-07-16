@@ -1,5 +1,37 @@
 # Task History
 
+## 2026-07-16 — Role-specific UI and VNĐ standardization
+
+Completed:
+
+- Added distinct dashboard themes, three-step workflow guidance, and role-safe shortcuts for Receptionist, Technician, Manager, Admin, Inventory Staff, and Cashier.
+- Replaced visible implementation terms and raw inventory/request codes with plain Vietnamese across account, customer, diagnosis, quotation, warehouse, report, payment, and delivery screens.
+- Localized inventory availability, request filters, movement history, and operational report headings while preserving the existing role scopes and API behavior.
+- Standardized all rendered money through the shared formatter as `VNĐ`, labeled monetary inputs explicitly, and removed the obsolete `VITE_CURRENCY` setting.
+- Updated the frontend documentation and added a formatter regression test.
+
+Verification:
+
+- Frontend typecheck/lint/build passed; all 39 frontend tests passed across 14 files.
+- Git diff whitespace check passed.
+- No backend, API, database, business-rule, dependency, authorization, or transaction change was introduced.
+
+## 2026-07-16 — Customer-friendly frontend refinement
+
+Completed:
+
+- Reworked the customer home into a service-tracking portal with a four-step journey, clear request/progress actions, latest status, recent requests, and device/invoice shortcuts.
+- Replaced customer-visible implementation language and raw status/type codes with plain Vietnamese across shared layouts and the ticket, device, diagnosis, quotation, repair, attachment, and invoice flows.
+- Simplified customer views by hiding non-actionable priority/owner fields, added device-to-request deep links and no-device guidance, and clarified request forms and destructive-action copy.
+- Fixed the stale Cashier Phase 9 placeholder, undefined ticket-image color token, raw invoice/attachment labels, mobile drawer close/Escape/scroll locking, and keyboard focus visibility.
+- Updated frontend documentation and added regression coverage for customer form guidance, localized navigation, and payment status labels.
+
+Verification:
+
+- Frontend typecheck/lint/build passed; all 38 frontend tests passed across 13 files.
+- Git diff whitespace check passed.
+- No backend, API, database, business-rule, dependency, authorization, or transaction change was introduced.
+
 ## 2026-07-15 — Vietnamese workflow notifications
 
 Completed:

@@ -56,7 +56,7 @@ function ProfileIdentity({
 }) {
   return (
     <Card className="profile-card">
-      <span className="eyebrow">Thông tin user</span>
+      <span className="eyebrow">Thông tin tài khoản</span>
       <div className="profile-summary">
         <UserAvatar fullName={fullName} src={avatarUrl} size="large" />
         <div className="profile-summary__content">

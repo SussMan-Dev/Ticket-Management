@@ -30,4 +30,14 @@ describe("route guards và role navigation", () => {
     expect(manager).toContain("/tickets");
     expect(manager).not.toContain("/users");
   });
+
+  it("dùng nhãn tiếng Việt, dễ hiểu trong điều hướng", () => {
+    const customerLabels = navigationForRole("CUSTOMER").map((item) => item.label);
+    const inventoryLabels = navigationForRole("INVENTORY_STAFF").map((item) => item.label);
+
+    expect(customerLabels).toContain("Trang chủ");
+    expect(customerLabels).toContain("Hồ sơ cá nhân");
+    expect(inventoryLabels).toContain("Yêu cầu cấp linh kiện");
+    expect(inventoryLabels.join(" ")).not.toMatch(/Part requests|Catalog/i);
+  });
 });

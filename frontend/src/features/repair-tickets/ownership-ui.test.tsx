@@ -18,7 +18,9 @@ describe("customer ownership UI", () => {
     expect(screen.queryByLabelText("Khách hàng")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Mức ưu tiên")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Dự kiến chẩn đoán")).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/^Địa chỉ sửa chữa/)).toBeInTheDocument();
-    expect(await screen.findByLabelText(/^Thiết bị/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Địa chỉ nhận hoặc bàn giao/)).toBeInTheDocument();
+    expect(await screen.findByLabelText(/^Thiết bị cần sửa/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Thêm thiết bị trước khi gửi yêu cầu/ })).toHaveAttribute("href", "/devices");
+    expect(screen.getByRole("button", { name: "Gửi yêu cầu sửa chữa" })).toBeDisabled();
   });
 });
