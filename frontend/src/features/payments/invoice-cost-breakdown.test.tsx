@@ -33,6 +33,14 @@ const breakdown: InvoiceCostBreakdownData = {
 };
 
 describe("InvoiceCostBreakdown", () => {
+  it("does not crash when an older backend response has no breakdown", () => {
+    render(<InvoiceCostBreakdown />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Chưa tải được chi tiết các khoản chi phí",
+    );
+  });
+
   it("shows item sources and the complete amount calculation", () => {
     render(<InvoiceCostBreakdown breakdown={breakdown} />);
 

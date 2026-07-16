@@ -22,10 +22,18 @@ export function InvoiceCostBreakdown({
   title = "Các khoản tạo nên chi phí",
   description = "Số tiền được tính từ dự toán đã chấp nhận và linh kiện kho thực tế đã cấp.",
 }: {
-  breakdown: InvoiceCostBreakdownData;
+  breakdown?: InvoiceCostBreakdownData;
   title?: string;
   description?: string;
 }) {
+  if (!breakdown || !Array.isArray(breakdown.lines)) {
+    return (
+      <div className="alert alert--warning" role="alert">
+        Chưa tải được chi tiết các khoản chi phí. Vui lòng tải lại trang.
+      </div>
+    );
+  }
+
   return (
     <section className="invoice-breakdown" aria-labelledby="invoice-breakdown-title">
       <div className="section-heading invoice-breakdown__heading">
