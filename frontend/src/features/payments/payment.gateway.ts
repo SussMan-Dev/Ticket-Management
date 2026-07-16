@@ -3,7 +3,9 @@ import { toQueryString } from "../../lib/api/query-string";
 import type { PageQuery, PaginationMeta } from "../../types/api";
 import type {
   Invoice,
+  InvoiceDetail,
   InvoicePaymentStatus,
+  InvoicePreview,
   Payment,
   PaymentMethod,
   RefundApprover,
@@ -34,10 +36,18 @@ export const paymentGateway = {
     );
   },
   async getInvoice(id: number) {
-    return (await apiClient.get<Invoice>(`/invoices/${id}`)).data;
+    return (await apiClient.get<InvoiceDetail>(`/invoices/${id}`)).data;
+  },
+  async previewInvoice(ticketId: number) {
+    return (await apiClient.get<InvoicePreview>(
+      `/repair-tickets/${ticketId}/invoice-preview`,
+    )).data;
   },
   async createInvoice(ticketId: number) {
-    return (await apiClient.post<Invoice>(`/repair-tickets/${ticketId}/invoices`, {})).data;
+    return (await apiClient.post<InvoiceDetail>(
+      `/repair-tickets/${ticketId}/invoices`,
+      {},
+    )).data;
   },
   async listPayments(invoiceId: number) {
     return (await apiClient.get<Payment[]>(`/invoices/${invoiceId}/payments`)).data;
@@ -52,4 +62,3 @@ export const paymentGateway = {
     return (await apiClient.get<RefundApprover[]>("/payments/refund-approvers")).data;
   },
 };
-

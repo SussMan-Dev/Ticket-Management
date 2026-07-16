@@ -65,8 +65,8 @@ export function PartRequestsPage() {
         title="Yêu cầu linh kiện"
         description={pageCopy.description}
       />
-      <Card>
-        <div className="toolbar">
+      <Card className="inventory-page-card">
+        <div className="toolbar inventory-toolbar inventory-toolbar--status">
           <FormField label="Trạng thái" htmlFor="request-status">
             <select
               id="request-status"
@@ -87,10 +87,10 @@ export function PartRequestsPage() {
         ) : (requests.data?.data ?? []).length === 0 ? (
           <EmptyState title="Không có yêu cầu" description="Yêu cầu phù hợp bộ lọc sẽ xuất hiện tại đây." />
         ) : (
-          <div className="request-list">
+          <div className="request-list inventory-request-list">
             {(requests.data?.data ?? []).map((request) => (
-              <Card key={request.id} className="diagnosis-card">
-                <div className="section-heading">
+              <Card key={request.id} className="diagnosis-card inventory-request-card">
+                <div className="section-heading inventory-request-heading">
                   <div>
                     <span className="eyebrow">Yêu cầu #{request.id}</span>
                     <h2>{user.role === "INVENTORY_STAFF" ? request.ticket.ticketCode : <Link to={`/tickets/${request.ticket.id}`}>{request.ticket.ticketCode}</Link>}</h2>
@@ -119,18 +119,18 @@ export function PartRequestsPage() {
 
 export function RequestItems({ request }: { request: PartRequest }) {
   return (
-    <div className="table-wrap">
-      <table>
+    <div className="table-wrap inventory-table-wrap">
+      <table className="inventory-table inventory-request-items-table">
         <thead><tr><th>Linh kiện</th><th>Đơn giá chốt</th><th>Yêu cầu</th><th>Đã cấp</th><th>Tiền đã cấp</th><th>Còn lại</th><th>Tồn kho</th></tr></thead>
         <tbody>
           {request.items.map((item) => (
-              <tr key={item.id}>
-                <td><strong>{item.part.name}</strong><small>{item.part.sku}</small></td>
-                <td>{formatMoney(item.unitPrice)}</td>
-                <td>{item.requestedQuantity} {item.part.unit}</td>
-                <td>{item.fulfilledQuantity}</td>
-                <td><strong>{formatMoney(item.fulfilledLineTotal)}</strong></td>
-                <td>{item.remainingQuantity}</td>
+            <tr key={item.id}>
+              <td><strong>{item.part.name}</strong><small>{item.part.sku}</small></td>
+              <td>{formatMoney(item.unitPrice)}</td>
+              <td>{item.requestedQuantity} {item.part.unit}</td>
+              <td>{item.fulfilledQuantity}</td>
+              <td><strong>{formatMoney(item.fulfilledLineTotal)}</strong></td>
+              <td>{item.remainingQuantity}</td>
               <td>{item.part.quantityOnHand}</td>
             </tr>
           ))}
@@ -157,15 +157,15 @@ function InventoryRequestActions({ request }: { request: PartRequest }) {
 
   if (request.status === "PENDING") {
     return (
-      <div className="review-actions">
+      <div className="inventory-review-actions">
         <p className="read-only-note">Kiểm tra đúng linh kiện và số lượng trước khi duyệt. Đơn giá đã được chốt khi thợ tạo yêu cầu; số lượng kho thực tế cấp sẽ được cộng vào hóa đơn.</p>
-        <div>
+        <div className="inventory-review-actions__reject">
           <FormField label="Lý do từ chối" htmlFor={`reject-${request.id}`}>
             <textarea id={`reject-${request.id}`} rows={2} value={reason} onChange={(event) => setReason(event.target.value)} />
           </FormField>
           <Button variant="danger" disabled={reason.trim().length < 3} loading={reject.isPending} onClick={() => reject.mutate(reason.trim())}>Từ chối</Button>
         </div>
-        <Button loading={approve.isPending} onClick={() => approve.mutate("Đã kiểm tra tồn kho")}>Duyệt yêu cầu</Button>
+        <Button className="inventory-review-actions__approve" loading={approve.isPending} onClick={() => approve.mutate("Đã kiểm tra tồn kho")}>Duyệt yêu cầu</Button>
         <MutationError error={approve.error ?? reject.error} />
       </div>
     );
@@ -174,9 +174,9 @@ function InventoryRequestActions({ request }: { request: PartRequest }) {
     return null;
   }
   return (
-    <div className="form-card">
+    <div className="inventory-fulfillment">
       <h3>Cấp linh kiện</h3>
-      <div className="form-grid">
+      <div className="form-grid inventory-fulfillment__grid">
         {request.items.filter((item) => item.remainingQuantity > 0).map((item) => (
           <FormField
             key={item.id}
@@ -197,16 +197,18 @@ function InventoryRequestActions({ request }: { request: PartRequest }) {
           </FormField>
         ))}
       </div>
-      <FormField label="Ghi chú cấp kho" htmlFor={`fulfill-note-${request.id}`}>
-        <textarea id={`fulfill-note-${request.id}`} rows={2} value={note} onChange={(event) => setNote(event.target.value)} />
-      </FormField>
-      <Button
-        disabled={!fulfillmentValid}
-        loading={fulfill.isPending}
-        onClick={() => fulfill.mutate({ items: fulfillmentItems, note: note.trim() || null })}
-      >
-        Ghi nhận cấp kho
-      </Button>
+      <div className="inventory-fulfillment__footer">
+        <FormField label="Ghi chú cấp kho" htmlFor={`fulfill-note-${request.id}`}>
+          <textarea id={`fulfill-note-${request.id}`} rows={2} value={note} onChange={(event) => setNote(event.target.value)} />
+        </FormField>
+        <Button
+          disabled={!fulfillmentValid}
+          loading={fulfill.isPending}
+          onClick={() => fulfill.mutate({ items: fulfillmentItems, note: note.trim() || null })}
+        >
+          Ghi nhận cấp kho
+        </Button>
+      </div>
       <MutationError error={fulfill.error} />
     </div>
   );

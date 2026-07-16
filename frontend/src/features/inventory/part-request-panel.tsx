@@ -30,15 +30,15 @@ export function PartRequestPanel({ ticket }: { ticket: RepairTicket }) {
   const data = requests.data?.data ?? [];
 
   return (
-    <section className="detail-section" aria-labelledby="part-request-title">
-      <div className="section-heading">
+    <section className="detail-section inventory-request-panel" aria-labelledby="part-request-title">
+      <div className="section-heading inventory-request-heading">
         <div><span className="eyebrow">Cấp linh kiện</span><h2 id="part-request-title">Yêu cầu linh kiện</h2></div>
         {canCreate ? <Button variant="secondary" onClick={() => setCreating((value) => !value)}>{creating ? "Đóng" : "+ Tạo yêu cầu"}</Button> : null}
       </div>
       {canCreate ? <div className="alert alert--info">Yêu cầu sẽ chốt đơn giá hiện tại. Kho phải duyệt và chỉ số lượng thực tế được cấp mới được cộng vào hóa đơn.</div> : null}
       {creating ? <CreateRequestForm ticketId={ticket.id} onDone={() => setCreating(false)} /> : null}
       {data.length === 0 ? <EmptyState title="Chưa có yêu cầu linh kiện" description="Kỹ thuật viên được phân công có thể gửi yêu cầu khi phiếu đang chờ linh kiện hoặc đang sửa chữa." /> : data.map((request) => (
-        <Card key={request.id} className="diagnosis-card">
+        <Card key={request.id} className="diagnosis-card inventory-request-card">
           <div className="section-heading"><strong>Yêu cầu #{request.id}</strong><StatusBadge value={request.status} /></div>
           {request.note ? <p>{request.note}</p> : null}
           <RequestItems request={request} />
@@ -73,11 +73,11 @@ function CreateRequestForm({ ticketId, onDone }: { ticketId: number; onDone(): v
     onDone();
   };
   return (
-    <Card className="form-card">
+    <Card className="form-card inventory-request-form">
       <MutationError error={create.error} />
       <FormField label="Tìm linh kiện" htmlFor="request-part-search"><input id="request-part-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="SKU hoặc tên…" /></FormField>
       {items.map((item, index) => (
-        <div className="part-row" key={index}>
+        <div className="part-row inventory-request-row" key={index}>
           <FormField label="Linh kiện" htmlFor={`request-part-${index}`} required>
             <select id={`request-part-${index}`} value={item.partId} onChange={(event) => change(index, { partId: Number(event.target.value) })}>
               <option value={0}>Chọn linh kiện</option>
@@ -85,7 +85,7 @@ function CreateRequestForm({ ticketId, onDone }: { ticketId: number; onDone(): v
             </select>
           </FormField>
           <FormField label="Số lượng" htmlFor={`request-quantity-${index}`} required><input id={`request-quantity-${index}`} type="number" min={1} value={item.requestedQuantity} onChange={(event) => change(index, { requestedQuantity: Number(event.target.value) })} /></FormField>
-          <Button variant="ghost" size="sm" disabled={items.length === 1} onClick={() => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index))}>Xóa</Button>
+          <Button className="inventory-request-row__remove" type="button" variant="ghost" size="sm" disabled={items.length === 1} onClick={() => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index))}>Xóa</Button>
         </div>
       ))}
       <Button type="button" size="sm" variant="secondary" onClick={() => setItems((current) => [...current, { partId: 0, requestedQuantity: 1 }])}>+ Thêm linh kiện</Button>

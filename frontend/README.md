@@ -12,6 +12,8 @@ Production-oriented React client for the Repair Ticket Management System. The ap
 
 The shared application shell keeps the sticky header, page content, and footer on one responsive content grid. Cards, forms, data tables, and page actions use common spacing and alignment rules across desktop and mobile views; authentication screens reuse the same branded footer in a compact layout.
 
+Inventory screens use dedicated responsive layout rules: filters share a stable baseline, monetary and quantity columns use tabular right alignment, wide stock tables scroll within their cards, and approve/reject/fulfillment controls stack cleanly on narrow screens. Ticket-scoped part-request rows keep the part selector, quantity, and remove action in the correct columns without changing shared form layouts.
+
 The customer home follows a service-tracking portal pattern: clear repair steps, prominent request/progress actions, a latest-status summary, and direct links to devices and invoices. Staff dashboards use role-specific visual themes, three-step workflow guidance, and shortcuts for reception, technical work, management, administration, inventory, and cashier tasks. User-facing pages use plain Vietnamese instead of implementation terms and translate stored status/type codes before display. All monetary values are rendered consistently with the `VNĐ` suffix. The mobile drawer supports an explicit close control, Escape, scroll locking, and keyboard-visible focus states.
 
 ## Setup
@@ -89,7 +91,7 @@ Admin navigation intentionally excludes repair operations. Customer forms do not
 - Parts: catalog list/detail/create/update, stock-in, signed adjustment, and movement history
 - Part requests: ticket-scoped create, scoped list/detail, approve, reject, and partial fulfillment
 - Repair actions: scoped repair logs, fulfilled-part attribution, append-only tests, technical completion/rework, and aggregated timeline
-- Billing: server-calculated invoice list/detail/create, partial/full payments, active manager refund approvers, and whole-payment refund
+- Billing: server-calculated itemized invoice preview/list/detail/create, partial/full payments, active manager refund approvers, and whole-payment refund
 - Notifications: paginated list, unread count, mark-one, and mark-all read state
 - Delivery: normal paid handover, audited Manager exception, proof metadata, final closure, and customer-safe view
 - Reviews: owner-only post-delivery creation and seven-day editing with authorized staff reads
@@ -112,7 +114,7 @@ All UI calls go through typed feature API functions and centralized query keys. 
 - Assigned technicians record repair logs only from fulfilled parts; finishing a log makes it read-only. Customers receive the backend-sanitized progress view.
 - Tests are appended after a finished repair log. The completion action renders the server outcome and refreshes ticket, status-history, repair/test, and timeline caches.
 - Ticket detail uses the Phase 8 aggregated timeline instead of presenting status history as the complete operational history.
-- Cashiers choose only completed tickets for invoice creation. The server calculates accepted labor/service plus actual warehouse-fulfilled quantities at request-time prices; provisional diagnosis parts are excluded and totals are never editable in the browser.
+- Cashiers choose only completed tickets for invoice creation. Selecting a ticket loads a professional server-derived preview with every labor/service and fulfilled-part line, source, quantity, unit price, subtotals, discount, tax, and final total; the same itemization appears on invoice detail. The server recalculates on issue, provisional diagnosis parts are excluded, and totals are never editable in the browser.
 - Payment/refund mutations invalidate invoice, payment, ticket, and history caches so delivery readiness always follows backend state.
 - Manager assignment uses a server-filtered active/unlocked technician selector rather than a raw numeric ID.
 - Notification counts refresh in the app header; reference links mark items read and navigate to the related ticket or invoice.
@@ -125,4 +127,4 @@ All planned Phase 1–10 backend contracts are connected to the frontend. Furthe
 
 ## Test coverage
 
-The suite covers login/logout transport, single-flight refresh and one-time retry, error envelopes, protected/role routes, role navigation, customer ownership UI, assignment and diagnosis state rules, quotation role/status/expiry rules, parts/request routing, repair/test/timeline mutation invalidation, billing money/refund validation and cache invalidation, and 409/422 handling. Phase 10 backend tests cover notification recipient scope, delivery/payment exception/closure, review ownership/edit policy, and report roles/ranges.
+The suite covers login/logout transport, single-flight refresh and one-time retry, error envelopes, protected/role routes, role navigation, customer ownership UI, assignment and diagnosis state rules, quotation role/status/expiry rules, parts/request routing, repair/test/timeline mutation invalidation, itemized invoice preview rendering/loading, billing money/refund validation and cache invalidation, and 409/422 handling. Phase 10 backend tests cover notification recipient scope, delivery/payment exception/closure, review ownership/edit policy, and report roles/ranges.

@@ -1,12 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import type { PropsWithChildren } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { queryKeys } from "../../lib/api/query-keys";
-import type { Payment } from "../../types/domain";
+import type { InvoicePreview, Payment } from "../../types/domain";
 import { paymentGateway } from "./payment.gateway";
 import { paymentFormSchema, refundFormSchema } from "./payment.schemas";
-import { useCreatePayment, useRefundPayment } from "./payments.api";
+import { useCreatePayment, useInvoicePreview, useRefundPayment } from "./payments.api";
 
 const payment: Payment = {
   id: 50,
@@ -23,6 +23,20 @@ const payment: Payment = {
   createdAt: "2026-07-15T00:00:00.000Z",
 };
 
+const invoicePreview: InvoicePreview = {
+  ticket: { id: 10, ticketCode: "RT-2026-000010", title: "Screen failure" },
+  customer: { id: 2, fullName: "Customer" },
+  costBreakdown: {
+    lines: [],
+    serviceSubtotal: 400,
+    partSubtotal: 300,
+    subtotal: 700,
+    discountAmount: 100,
+    taxAmount: 50,
+    totalAmount: 650,
+  },
+};
+
 function testQueryClient() {
   const queryClient = new QueryClient();
   const wrapper = ({ children }: PropsWithChildren) => (
@@ -32,6 +46,21 @@ function testQueryClient() {
 }
 
 describe("payment forms and query integration", () => {
+  it("loads the server-derived preview for the selected completed ticket", async () => {
+    vi.spyOn(paymentGateway, "previewInvoice").mockResolvedValue(invoicePreview);
+    const { wrapper } = testQueryClient();
+    const { result } = renderHook(() => useInvoicePreview(10), { wrapper });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(paymentGateway.previewInvoice).toHaveBeenCalledWith(10);
+    expect(result.current.data?.costBreakdown).toMatchObject({
+      serviceSubtotal: 400,
+      partSubtotal: 300,
+      totalAmount: 650,
+    });
+  });
+
   it("accepts positive money with two decimals and rejects extra precision", () => {
     expect(paymentFormSchema.safeParse({ amount: 10.25, method: "CASH" }).success).toBe(true);
     expect(paymentFormSchema.safeParse({ amount: 10.251, method: "CASH" }).success).toBe(false);

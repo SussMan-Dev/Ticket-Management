@@ -11,8 +11,13 @@ import { FormField } from "../../components/ui/form-field";
 import { StatusBadge } from "../../components/ui/status-badge";
 import { useAuth } from "../../lib/auth/use-auth";
 import { formatDateTime } from "../../lib/formatting/formatters";
-import type { RepairLog, RepairTicket, TestResultValue } from "../../types/domain";
+import type {
+  RepairLog,
+  RepairTicket,
+  TestResultValue,
+} from "../../types/domain";
 import { usePartRequests } from "../inventory/inventory.api";
+import { canWriteRepairLog } from "./repair-action.rules";
 import {
   useCompleteTesting,
   useCreateRepairLog,
@@ -35,7 +40,7 @@ export function RepairActionPanel({ ticket }: { ticket: RepairTicket }) {
 
   const repairLogs = logs.data ?? [];
   const testResults = tests.data ?? [];
-  const technicianCanRepair = user.role === "TECHNICIAN" && ticket.status === "REPAIRING";
+  const technicianCanLogRepair = canWriteRepairLog(user.role, ticket.status);
   const technicianCanTest = user.role === "TECHNICIAN" &&
     ["REPAIRING", "TESTING"].includes(ticket.status) &&
     repairLogs.length > 0 && repairLogs.every((log) => Boolean(log.finishedAt));
@@ -47,7 +52,12 @@ export function RepairActionPanel({ ticket }: { ticket: RepairTicket }) {
         <StatusBadge value={ticket.status} />
       </div>
 
-      {technicianCanRepair ? <CreateRepairLogForm ticketId={ticket.id} logs={repairLogs} /> : null}
+      {technicianCanLogRepair && ticket.status === "WAITING_FOR_PARTS" ? (
+        <div className="alert alert--info">
+          Bạn vẫn có thể ghi công việc trong lúc chờ kho. Chỉ linh kiện đã được cấp mới có thể được ghi nhận là đã sử dụng; bước kiểm tra bắt đầu sau khi phiếu trở lại trạng thái đang sửa.
+        </div>
+      ) : null}
+      {technicianCanLogRepair ? <CreateRepairLogForm ticketId={ticket.id} logs={repairLogs} /> : null}
 
       <div className="section-heading"><h3>Nhật ký sửa chữa</h3><span>{repairLogs.length} bản ghi</span></div>
       {repairLogs.length === 0
@@ -68,7 +78,7 @@ export function RepairActionPanel({ ticket }: { ticket: RepairTicket }) {
                 ))}
               </ul>
             ) : null}
-            {technicianCanRepair && !log.finishedAt ? (
+            {technicianCanLogRepair && !log.finishedAt ? (
               <FinishRepairLog ticketId={ticket.id} log={log} />
             ) : null}
           </Card>

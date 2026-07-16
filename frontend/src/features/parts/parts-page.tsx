@@ -84,8 +84,8 @@ export function PartsPage() {
       {movement ? <StockMovementForm part={movement} onDone={() => setMovement(null)} /> : null}
       {history ? <InventoryHistory part={history} onClose={() => setHistory(null)} /> : null}
 
-      <Card>
-        <div className="toolbar">
+      <Card className="inventory-page-card">
+        <div className="toolbar inventory-toolbar">
           <label className="search-field">
             <span className="sr-only">Tìm linh kiện</span>
             <input
@@ -108,8 +108,8 @@ export function PartsPage() {
         ) : (parts.data?.data ?? []).length === 0 ? (
           <EmptyState title="Không có linh kiện" description="Thử thay đổi bộ lọc hoặc thêm linh kiện mới." />
         ) : (
-          <div className="table-wrap">
-            <table>
+          <div className="table-wrap inventory-table-wrap">
+            <table className="inventory-table inventory-parts-table">
               <thead>
                 <tr>
                   <th>Linh kiện</th><th>Đơn vị</th><th>Giá bán</th>
@@ -134,7 +134,7 @@ export function PartsPage() {
                       </span>
                     </td>
                     <td>
-                      <div className="button-row">
+                      <div className="button-row inventory-table-actions">
                         {canManage ? (
                           <>
                             <Button size="sm" variant="secondary" onClick={() => setEditing(part)}>Sửa</Button>
@@ -193,7 +193,7 @@ function PartForm({ part, onDone }: { part?: Part; onDone(): void }) {
     onDone();
   };
   return (
-    <Card className="form-card">
+    <Card className="form-card inventory-form-card">
       <div className="section-heading"><h2>{part ? `Sửa ${part.sku}` : "Tạo linh kiện"}</h2><Button variant="ghost" onClick={onDone}>Đóng</Button></div>
       <MutationError error={mutation.error} />
       <div className="form-grid">
@@ -227,7 +227,7 @@ function StockMovementForm({ part, onDone }: { part: Part; onDone(): void }) {
     onDone();
   };
   return (
-    <Card className="form-card">
+    <Card className="form-card inventory-form-card">
       <div className="section-heading"><div><h2>Biến động kho · {part.sku}</h2><p>Tồn hiện tại: {part.quantityOnHand} {part.unit}</p></div><Button variant="ghost" onClick={onDone}>Đóng</Button></div>
       <MutationError error={mutation.error} />
       <div className="form-grid">
@@ -246,7 +246,7 @@ function InventoryHistory({ part, onClose }: { part: Part; onClose(): void }) {
     <Card>
       <div className="section-heading"><div><h2>Lịch sử kho · {part.sku}</h2><p>Mọi lần nhập, xuất và điều chỉnh được sắp xếp từ mới nhất.</p></div><Button variant="ghost" onClick={onClose}>Đóng</Button></div>
       {transactions.isLoading ? <LoadingState rows={3} /> : transactions.isError ? <ErrorState error={transactions.error} /> : (transactions.data?.data ?? []).length === 0 ? <EmptyState title="Chưa có biến động" description="Lịch sử sẽ xuất hiện sau lần nhập, xuất hoặc điều chỉnh đầu tiên." /> : (
-        <div className="table-wrap"><table><thead><tr><th>Thời gian</th><th>Loại</th><th>Số lượng</th><th>Trước → Sau</th><th>Người thực hiện</th><th>Ghi chú</th></tr></thead><tbody>{(transactions.data?.data ?? []).map((item) => <tr key={item.id}><td>{formatDateTime(item.createdAt)}</td><td>{inventoryTransactionLabels[item.transactionType]}</td><td>{item.quantity}</td><td>{item.quantityBefore} → {item.quantityAfter}</td><td>{item.performedBy.fullName}</td><td>{item.note ?? "—"}</td></tr>)}</tbody></table></div>
+        <div className="table-wrap inventory-table-wrap"><table className="inventory-table inventory-history-table"><thead><tr><th>Thời gian</th><th>Loại</th><th>Số lượng</th><th>Trước → Sau</th><th>Người thực hiện</th><th>Ghi chú</th></tr></thead><tbody>{(transactions.data?.data ?? []).map((item) => <tr key={item.id}><td>{formatDateTime(item.createdAt)}</td><td>{inventoryTransactionLabels[item.transactionType]}</td><td>{item.quantity}</td><td>{item.quantityBefore} → {item.quantityAfter}</td><td>{item.performedBy.fullName}</td><td>{item.note ?? "—"}</td></tr>)}</tbody></table></div>
       )}
     </Card>
   );

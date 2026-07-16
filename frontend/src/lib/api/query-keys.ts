@@ -23,6 +23,7 @@ export const queryKeys = {
   testResults: (ticketId: number) => ["repair-tickets", ticketId, "test-results"] as const,
   ticketTimeline: (ticketId: number) => ["repair-tickets", ticketId, "timeline"] as const,
   invoices: (params?: unknown) => ["invoices", params] as const,
+  invoicePreview: (ticketId: number) => ["repair-tickets", ticketId, "invoice-preview"] as const,
   invoice: (id: number) => ["invoices", id] as const,
   invoicePayments: (id: number) => ["invoices", id, "payments"] as const,
   refundApprovers: ["payments", "refund-approvers"] as const,

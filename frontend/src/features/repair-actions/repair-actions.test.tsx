@@ -10,6 +10,7 @@ import {
   useCreateRepairLog,
   useCreateTestResult,
 } from "./repair-actions.api";
+import { canWriteRepairLog } from "./repair-action.rules";
 
 const repairLog: RepairLog = {
   id: 20,
@@ -41,6 +42,13 @@ function wrapper(queryClient: QueryClient) {
 }
 
 describe("Phase 8 frontend integration", () => {
+  it("keeps repair logging available to technicians while parts are pending", () => {
+    expect(canWriteRepairLog("TECHNICIAN", "WAITING_FOR_PARTS")).toBe(true);
+    expect(canWriteRepairLog("TECHNICIAN", "REPAIRING")).toBe(true);
+    expect(canWriteRepairLog("TECHNICIAN", "TESTING")).toBe(false);
+    expect(canWriteRepairLog("MANAGER", "WAITING_FOR_PARTS")).toBe(false);
+  });
+
   it("creates a ticket-scoped repair log and refreshes the timeline", async () => {
     const post = vi.spyOn(apiClient, "post").mockResolvedValue({
       success: true,

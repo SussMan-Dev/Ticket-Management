@@ -11,7 +11,8 @@ import { useAuth } from "../../lib/auth/use-auth";
 import { formatDateTime, formatMoney } from "../../lib/formatting/formatters";
 import { INVOICE_PAYMENT_STATUSES, type InvoicePaymentStatus } from "../../types/domain";
 import { useTickets } from "../repair-tickets/tickets.api";
-import { useCreateInvoice, useInvoices } from "./payments.api";
+import { InvoiceCostBreakdown } from "./invoice-cost-breakdown";
+import { useCreateInvoice, useInvoicePreview, useInvoices } from "./payments.api";
 
 const paymentStatusLabels: Record<InvoicePaymentStatus, string> = {
   UNPAID: "Chưa thanh toán",
@@ -50,8 +51,9 @@ function CreateInvoiceCard({ onDone }: { onDone(): void }) {
   const [ticketId, setTicketId] = useState(0);
   const tickets = useTickets({ page: 1, limit: 100, search: search || undefined, status: "COMPLETED", sortBy: "updatedAt", sortOrder: "desc" });
   const create = useCreateInvoice();
+  const preview = useInvoicePreview(ticketId);
   const submit = async () => {
-    if (ticketId <= 0) return;
+    if (ticketId <= 0 || !preview.data) return;
     const invoice = await create.mutateAsync(ticketId);
     onDone();
     void navigate(`/invoices/${invoice.id}`);
@@ -64,8 +66,20 @@ function CreateInvoiceCard({ onDone }: { onDone(): void }) {
       <FormField label="Phiếu đã hoàn tất" htmlFor="billable-ticket" required><select id="billable-ticket" value={ticketId} onChange={(event) => setTicketId(Number(event.target.value))}><option value={0}>Chọn phiếu</option>{(tickets.data?.data ?? []).map((ticket) => <option value={ticket.id} key={ticket.id}>{ticket.ticketCode} · {ticket.customer.fullName} · {ticket.title}</option>)}</select></FormField>
     </div>
     {tickets.isLoading ? <LoadingState rows={1} /> : null}
+    {ticketId > 0 && preview.isLoading ? <div className="invoice-preview-state"><LoadingState rows={3} /></div> : null}
+    {ticketId > 0 && preview.isError ? <div className="invoice-preview-state"><ErrorState error={preview.error} retry={() => void preview.refetch()} /></div> : null}
+    {preview.data ? <div className="invoice-preview-card">
+      <div className="invoice-preview-card__identity">
+        <div><span>Phiếu sửa chữa</span><strong>{preview.data.ticket.ticketCode}</strong><small>{preview.data.ticket.title}</small></div>
+        <div><span>Khách hàng</span><strong>{preview.data.customer.fullName}</strong><small>#{preview.data.customer.id}</small></div>
+      </div>
+      <InvoiceCostBreakdown breakdown={preview.data.costBreakdown} title="Xem trước hóa đơn" description="Kiểm tra đầy đủ từng khoản trước khi phát hành. Hệ thống sẽ xác minh lại dữ liệu tại thời điểm tạo hóa đơn." />
+    </div> : null}
     {tickets.isError ? <ErrorState error={tickets.error} retry={() => void tickets.refetch()} /> : null}
     {!tickets.isLoading && !tickets.isError && (tickets.data?.data ?? []).length === 0 ? <div className="alert alert--info">Không có phiếu hoàn tất đang chờ lập hóa đơn.</div> : null}
-    <Button disabled={ticketId <= 0} loading={create.isPending} onClick={() => void submit()}>Phát hành hóa đơn</Button>
+    <div className="invoice-preview-actions">
+      <p>Chỉ phát hành sau khi đã đối chiếu tiền công, linh kiện, giảm giá và thuế.</p>
+      <Button disabled={ticketId <= 0 || !preview.data || preview.isError} loading={create.isPending} onClick={() => void submit()}>Phát hành hóa đơn</Button>
+    </div>
   </Card>;
 }

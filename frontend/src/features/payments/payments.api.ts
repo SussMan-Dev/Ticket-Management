@@ -22,6 +22,14 @@ export function useInvoice(id: number) {
   });
 }
 
+export function useInvoicePreview(ticketId: number) {
+  return useQuery({
+    queryKey: queryKeys.invoicePreview(ticketId),
+    queryFn: () => paymentGateway.previewInvoice(ticketId),
+    enabled: Number.isInteger(ticketId) && ticketId > 0,
+  });
+}
+
 export function useInvoicePayments(invoiceId: number) {
   return useQuery({
     queryKey: queryKeys.invoicePayments(invoiceId),
@@ -35,6 +43,9 @@ export function useCreateInvoice() {
   return useMutation({
     mutationFn: (ticketId: number) => paymentGateway.createInvoice(ticketId),
     onSuccess: async (invoice) => {
+      queryClient.removeQueries({
+        queryKey: queryKeys.invoicePreview(invoice.ticket.id),
+      });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["invoices"] }),
         queryClient.invalidateQueries({ queryKey: ["repair-tickets"] }),

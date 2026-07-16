@@ -10,7 +10,8 @@ import { PageHeader } from "../../components/ui/page-header";
 import { StatusBadge } from "../../components/ui/status-badge";
 import { useAuth } from "../../lib/auth/use-auth";
 import { formatDateTime, formatMoney } from "../../lib/formatting/formatters";
-import type { Invoice, Payment, PaymentMethod } from "../../types/domain";
+import type { Invoice, InvoiceDetail, Payment, PaymentMethod } from "../../types/domain";
+import { InvoiceCostBreakdown } from "./invoice-cost-breakdown";
 import { paymentFormSchema, refundFormSchema, type PaymentFormValues, type RefundFormValues } from "./payment.schemas";
 import { useCreatePayment, useInvoice, useInvoicePayments, useRefundApprovers, useRefundPayment } from "./payments.api";
 
@@ -36,7 +37,7 @@ export function InvoiceDetailPage() {
   </>;
 }
 
-function InvoiceSummary({ invoice }: { invoice: Invoice }) {
+function InvoiceSummary({ invoice }: { invoice: InvoiceDetail }) {
   return <>
     <div className="metric-grid billing-metrics">
       <Card><span className="metric__label">Tổng hóa đơn</span><strong className="metric__value">{formatMoney(invoice.totalAmount)}</strong><small>Gồm tiền công và linh kiện kho đã cấp trong lúc sửa: {formatMoney(invoice.subtotal)}</small></Card>
@@ -44,6 +45,9 @@ function InvoiceSummary({ invoice }: { invoice: Invoice }) {
       <Card><span className="metric__label">Còn lại</span><strong className="metric__value">{formatMoney(invoice.balanceAmount)}</strong><small>{invoice.balanceAmount === 0 ? "Đã thanh toán đủ" : "Có thể thanh toán từng phần"}</small></Card>
     </div>
     <Card className="billing-detail-card"><dl className="detail-list detail-list--two"><div><dt>Khách hàng</dt><dd>{invoice.customer.fullName}<small>{invoice.customer.email}</small></dd></div><div><dt>Phiếu sửa chữa</dt><dd>{invoice.ticket.ticketCode}<small><StatusBadge value={invoice.ticket.status} /></small></dd></div><div><dt>Giảm giá</dt><dd>{formatMoney(invoice.discountAmount)}</dd></div><div><dt>Thuế</dt><dd>{formatMoney(invoice.taxAmount)}</dd></div><div><dt>Người lập</dt><dd>{invoice.createdBy.fullName}</dd></div><div><dt>Mã hóa đơn</dt><dd>{invoice.invoiceCode}</dd></div></dl></Card>
+    <Card className="billing-cost-card">
+      <InvoiceCostBreakdown breakdown={invoice.costBreakdown} />
+    </Card>
   </>;
 }
 

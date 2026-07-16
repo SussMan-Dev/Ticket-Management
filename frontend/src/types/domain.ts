@@ -388,6 +388,42 @@ export type InvoicePaymentStatus = (typeof INVOICE_PAYMENT_STATUSES)[number];
 export type PaymentMethod = "CASH" | "BANK_TRANSFER" | "CARD" | "E_WALLET";
 export type PaymentStatus = "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
 
+export type InvoiceCostLineType = "LABOR" | "OTHER" | "PART";
+export type InvoiceCostLineSource =
+  | "ACCEPTED_QUOTATION"
+  | "FULFILLED_PART_REQUEST";
+
+export interface InvoiceCostLine {
+  type: InvoiceCostLineType;
+  description: string;
+  part: {
+    id: number;
+    sku: string;
+    name: string;
+    unit: string;
+  } | null;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  source: InvoiceCostLineSource;
+}
+
+export interface InvoiceCostBreakdown {
+  lines: InvoiceCostLine[];
+  serviceSubtotal: number;
+  partSubtotal: number;
+  subtotal: number;
+  discountAmount: number;
+  taxAmount: number;
+  totalAmount: number;
+}
+
+export interface InvoicePreview {
+  ticket: { id: number; ticketCode: string; title: string };
+  customer: { id: number; fullName: string };
+  costBreakdown: InvoiceCostBreakdown;
+}
+
 export interface Invoice {
   id: number;
   invoiceCode: string;
@@ -403,6 +439,10 @@ export interface Invoice {
   createdBy: { id: number; fullName: string };
   createdAt: string;
   updatedAt: string;
+}
+
+export interface InvoiceDetail extends Invoice {
+  costBreakdown: InvoiceCostBreakdown;
 }
 
 export interface Payment {
