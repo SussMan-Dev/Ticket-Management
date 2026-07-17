@@ -1,5 +1,153 @@
 # Task History
 
+## 2026-07-16 - Invoice runtime recovery
+
+Completed:
+
+- Diagnosed a version mismatch between the newly loaded Vite invoice UI and a stale Node backend process on localhost port 3000.
+- Restarted the workspace backend and verified live invoice detail now returns the itemized cost breakdown while the preview route is registered with its Cashier-only authorization.
+- Added a defensive invoice-breakdown fallback so a temporarily older backend response displays a reload message instead of crashing React.
+- Added regression coverage without changing database, SQL, API contracts, business rules, dependencies, or authorization.
+
+Verification:
+
+- Live invoice detail returned HTTP 200 with two itemized cost lines; preview route returned the expected Manager role denial instead of route-not-found.
+- Frontend typecheck/lint/build passed; all 44 frontend tests passed across 15 files.
+
+## 2026-07-16 - Professional itemized cashier invoices
+
+Completed:
+
+- Added a Cashier-only invoice-preview API and one shared server-side cost-breakdown calculation for preview, issue, and authorized detail reads.
+- Exposed every accepted labor/other estimate line and actual warehouse-fulfilled part line with quantity, unit price, line total, source metadata, service/part subtotals, discount, tax, and final total.
+- Kept provisional estimate parts excluded and transactionally recalculated the previewed amounts when the Cashier issues the invoice.
+- Upgraded the invoice-creation and detail screens with responsive, professional itemization and guarded loading/error/issue states.
+- Added backend API/service and frontend query/render regression coverage and synchronized payment, business, API, code, project, and frontend documentation.
+- Reused existing quotation and part-request snapshots; no database migration, package, or role expansion was required.
+
+Verification:
+
+- Backend typecheck/build passed; all 214 backend tests passed across 39 files.
+- Frontend typecheck/lint/build passed; all 43 frontend tests passed across 15 files.
+- Git diff whitespace check passed with line-ending notices only.
+
+## 2026-07-16 - Inventory UI alignment
+
+Completed:
+
+- Added inventory-specific desktop and mobile layout rules without changing shared component behavior.
+- Aligned catalog/request filters, numeric table columns, action columns, and horizontally scrollable warehouse tables.
+- Corrected the three-column ticket part-request row and rebuilt warehouse approve/reject and fulfillment action layouts.
+- Made inventory forms full-width within their content area and stacked controls cleanly at narrow breakpoints.
+- Updated frontend and current-task documentation; no backend or business contract changed.
+
+Verification:
+
+- Frontend typecheck/lint/build passed; all 41 frontend tests passed across 14 files.
+- Git diff whitespace check passed.
+- No database, SQL, API, dependency, authorization, or business-rule change was required.
+
+## 2026-07-16 - Repair logging while waiting for parts
+
+Completed:
+
+- Allowed the active assigned technician to create repair logs and update unfinished logs while a ticket is either `REPAIRING` or `WAITING_FOR_PARTS`.
+- Kept active-assignment, author, immutability, and fulfilled-part attribution checks unchanged.
+- Kept testing blocked until all open part requests are fulfilled, the ticket returns to `REPAIRING`, and every repair log is finished.
+- Kept the repair form and unfinished-log completion controls visible during parts waiting, with Vietnamese guidance about fulfilled parts and testing.
+- Updated business, module, workflow, API, code, project, database, current-task, and task-history documentation.
+
+Verification:
+
+- Backend typecheck/build passed; all 211 backend tests passed across 39 files.
+- Frontend typecheck/lint/build passed; all 41 frontend tests passed across 14 files.
+- Focused repair-action suites passed with 11 backend and 4 frontend tests.
+- No database migration, SQL, dependency, role, or endpoint change was required.
+
+## 2026-07-16 - Diagnosis estimate and actual fulfilled-part billing
+
+Completed:
+
+- Reclassified the diagnosis quotation as a customer estimate containing labor/service and provisional diagnosis parts without creating a stock request.
+- Made estimate acceptance start repair directly and removed supplemental repair-time quotation dependencies from warehouse approval and fulfillment.
+- Added a request-time selling-price snapshot to every part-request line and exposed the requested/fulfilled values to the warehouse UI.
+- Changed final invoice calculation to accepted LABOR/OTHER estimate lines plus actual warehouse-fulfilled quantities at request-time prices; provisional estimate PART lines are ignored.
+- Added and applied migration `004_snapshot_part_request_prices.sql`, backfilling all 10 existing development request lines without rewriting issued invoices.
+- Updated Vietnamese workflow guidance and synchronized business, module, API, code, database, and frontend documentation.
+
+Verification:
+
+- Backend typecheck/build passed; all 209 backend tests passed across 39 files.
+- Frontend lint/build passed; all 40 frontend tests passed across 14 files.
+- Development data formula checks produced 1,250,000 VND for `RT-2026-000013` and 550,000 VND for `RT-2026-000017` under the new invoice rule.
+
+## 2026-07-16 — Diagnosis-only parts no longer block repair
+
+Completed:
+
+- Confirmed `RT-2026-000014` was incorrectly left at `WAITING_FOR_PARTS`: its accepted legacy quotation contained one diagnosis candidate but the ticket had no repair-time part request.
+- Changed quotation acceptance to enter parts waiting only when accepted part quantities cover a real, non-rejected technician request.
+- Added regression coverage proving diagnosis-only legacy part lines resume `REPAIRING`, while valid supplemental quotations still enter `WAITING_FOR_PARTS`.
+- Reconciled the affected development ticket to `REPAIRING` in a guarded transaction and appended status-history and audit records without deleting the original history.
+- Updated quotation business and module documentation. No API, schema, package, authorization, or frontend change was required.
+
+Verification:
+
+- Backend typecheck/build passed; all 211 backend tests passed across 39 files.
+- Quotation service regression suite passed with 9 tests.
+- Git diff whitespace check passed with line-ending notices only.
+- Development ticket `RT-2026-000014` was verified at `REPAIRING` after guarded reconciliation.
+
+## 2026-07-16 — Invoice charge from inventory fulfillment
+
+Completed:
+
+- Diagnosed a real labor-only invoice whose ticket had one fulfilled part but no repair-log part attribution.
+- Changed invoice part quantities from finished repair-log attribution to cumulative inventory fulfillment.
+- Kept accepted supplemental quotation quantities and server-owned unit prices as the authorization ceiling; unauthorized fulfillment now blocks invoice creation instead of being omitted.
+- Removed silent automatic part return at testing completion and kept repair-log parts as technical evidence only.
+- Updated Vietnamese UI guidance and synchronized business, module, code, database, and API documentation.
+- Preserved existing financial records; no historical invoice was rewritten.
+
+Verification:
+
+- Backend typecheck/build passed; all 210 backend tests passed across 39 files.
+- Frontend typecheck/lint/build passed; all 40 frontend tests passed across 14 files.
+- No package or database migration was required.
+
+## 2026-07-16 — Actual-use part authorization and billing
+
+Completed:
+
+- Made diagnosis part candidates provisional and removed them from the initial labor quotation.
+- Added server-generated supplemental quotations for cumulative parts requested during repair, including customer approval before warehouse approval or fulfillment.
+- Added accepted-quotation coverage checks to inventory processing and Manager notifications for new repair-time part requests.
+- Made finished repair-log attribution the billable quantity source and blocked testing while any repair log remains unfinished.
+- Added automatic stock returns for fulfilled-but-unused quantities when testing succeeds.
+- Recalculated invoices from accepted labor/other lines plus only actually installed part quantities at accepted unit prices.
+- Updated the affected Vietnamese UI guidance, business/module documentation, and backend regression tests.
+
+Verification:
+
+- Backend typecheck/build passed; all 210 backend tests passed across 39 files.
+- Frontend typecheck/lint/build passed; all 40 frontend tests passed across 14 files.
+- Git diff whitespace check passed with line-ending notices only.
+- No package or database migration was required.
+
+## 2026-07-16 — Condensed Manager quotation publishing
+
+Completed:
+
+- Replaced the separate Manager submit, approve, and send controls with one “Duyệt và gửi khách hàng” action and one confirmation.
+- Preserved the required backend state machine by calling the existing submit, approve, and send endpoints sequentially and refreshing state after partial failures.
+- Redirected newly created quotations directly to detail for review, removing an extra list-navigation step.
+- Updated quotation UI guidance, frontend/module documentation, and regression coverage for the combined publication flow.
+
+Verification:
+
+- Frontend typecheck/lint/build passed; all 40 frontend tests passed across 14 files.
+- No backend, API contract, database, business-rule, dependency, authorization, or transaction change was introduced.
+
 ## 2026-07-16 — Role-specific UI and VNĐ standardization
 
 Completed:

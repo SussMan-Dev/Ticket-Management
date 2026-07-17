@@ -26,14 +26,14 @@ Only the active assigned technician writes repair logs, tests, and testing compl
 
 ## Business rules
 
-- Repair logs may be created and edited only while the ticket is `REPAIRING`. The creator must be the active assigned technician.
+- Repair logs may be created and edited while the ticket is `REPAIRING` or `WAITING_FOR_PARTS`. The creator must be the active assigned technician, so work already performed can still be documented while a supplemental request is pending.
 - `startedAt` defaults server-side. When both timestamps exist, `finishedAt` cannot precede `startedAt`.
 - An unfinished log is editable by its author. A non-null `finishedAt` makes the log and its part attribution immutable.
 - Repair-log parts do not decrement stock again. They attribute already-issued stock, and cumulative usage for each ticket/part cannot exceed cumulative fulfilled request quantity.
-- At least one finished repair log is required before recording tests.
+- Testing cannot begin while the ticket is `WAITING_FOR_PARTS`. After the final open request returns it to `REPAIRING`, at least one finished repair log and no unfinished repair log are required before recording or completing tests so technical work history is complete.
 - Test results are append-only. The first test recorded from `REPAIRING` atomically moves the ticket to `TESTING` with status history.
 - Test names are free-form because the schema has no configured test catalog. For completion, the newest result for each case-insensitive trimmed test name is authoritative.
-- Completing testing moves to `COMPLETED` only when every latest named result is `PASS`; otherwise it atomically returns to `REPAIRING`. Successful completion sets `completed_at`, notifies the customer, and is audited.
+- Completing testing moves to `COMPLETED` only when every latest named result is `PASS`; otherwise it atomically returns to `REPAIRING`. Successful completion sets `completed_at`, notifies the customer, and is audited. It does not alter fulfilled stock or invoice quantities.
 
 ## State transitions
 

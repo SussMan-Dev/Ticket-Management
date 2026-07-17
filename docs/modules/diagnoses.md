@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-Record technician findings, proposed work, labor estimate, risk, requested parts, submission, revision, and approval.
+Record technician findings, proposed work, labor estimate, risk, provisional part candidates, submission, revision, and approval.
 
 ## Main entities
 
@@ -22,7 +22,7 @@ The active assigned technician creates/edits/submits and must remain the diagnos
 
 ## Business rules
 
-Labor cost and estimates are non-negative. Requested parts must be active, positive, and unique within a diagnosis. Only one diagnosis may be open for a ticket. Submitted data becomes immutable except through manager-requested revision. Approval leaves the ticket at `WAITING_FOR_QUOTATION` for Phase 6 quotation creation.
+Labor cost and estimates are non-negative. Provisional part candidates must be active, positive, and unique within a diagnosis. They appear in the customer estimate at catalog selling prices but do not request stock and their estimated quantities are never copied directly into the invoice. Only one diagnosis may be open for a ticket. Submitted data becomes immutable except through manager-requested revision. Approval leaves the ticket at `WAITING_FOR_QUOTATION` for estimate creation.
 
 ## State transitions
 

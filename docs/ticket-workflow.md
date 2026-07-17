@@ -23,8 +23,8 @@ Every state change locks the ticket, validates its current state, updates the ti
 2. Manager assigns one active technician.
 3. Technician diagnoses; manager approves the diagnosis, then Phase 6 owns quotation creation and approval.
 4. Customer accepts or rejects the unexpired quotation.
-5. The assigned technician requests parts. Inventory may fulfill in portions without allowing negative stock; the ticket resumes repair only when no open request remains.
-6. The assigned technician records repair logs using fulfilled parts, then appends test outcomes. The latest named tests either complete technical work or return the ticket to repair.
+5. The assigned technician requests parts. Inventory may fulfill in portions without allowing negative stock; the technician may keep documenting work already performed while waiting, and the ticket resumes repair only when no open request remains.
+6. The assigned technician records repair logs using only fulfilled parts, then appends test outcomes after the ticket is back in `REPAIRING`. The latest named tests either complete technical work or return the ticket to repair.
 7. Cashier invoices and records payment.
 8. Receptionist delivers a paid device (or Manager records an audited unpaid exception), operational staff close the delivered ticket, and the customer may review after delivery.
 

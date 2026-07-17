@@ -16,6 +16,14 @@ export const invoiceRouter = Router();
 export const paymentRouter = Router();
 export const ticketInvoiceRouter = Router();
 
+ticketInvoiceRouter.get(
+  "/:ticketId/invoice-preview",
+  authenticate,
+  authorize("CASHIER"),
+  validate(ticketInvoiceParamsSchema),
+  asyncHandler(paymentController.previewInvoice),
+);
+
 invoiceRouter.get(
   "/",
   authenticate,

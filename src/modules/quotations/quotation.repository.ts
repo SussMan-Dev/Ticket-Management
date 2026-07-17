@@ -23,10 +23,6 @@ interface IdRow extends RowDataPacket {
   id: number;
 }
 
-interface CountRow extends RowDataPacket {
-  total: number;
-}
-
 export interface QuotationAmounts {
   laborAmount: number;
   partsAmount: number;
@@ -409,22 +405,6 @@ export class QuotationRepository {
       `,
       [status, note, quotationId],
     );
-  }
-
-  public async countPartItems(
-    executor: DatabaseExecutor,
-    quotationId: number,
-  ): Promise<number> {
-    const [rows] = await executor.execute<CountRow[]>(
-      `
-        SELECT COUNT(*) AS total
-        FROM quotation_items AS qi
-        WHERE qi.quotation_id = ?
-          AND qi.item_type = 'PART'
-      `,
-      [quotationId],
-    );
-    return rows[0]?.total ?? 0;
   }
 
   public async findActiveManagerIds(

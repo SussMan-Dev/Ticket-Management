@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-Create one server-calculated invoice per completed ticket, record partial/full payments, maintain the locked invoice balance, process manager-approved whole-payment refunds, and own billing readiness transitions.
+Preview and create one server-calculated, itemized invoice per completed ticket, record partial/full payments, maintain the locked invoice balance, process manager-approved whole-payment refunds, and own billing readiness transitions.
 
 ## Main entities
 
@@ -15,6 +15,7 @@ Implemented under `src/modules/payments/` using route, controller, service, repo
 ## Public APIs
 
 - `GET /invoices` and `GET /invoices/:id`
+- `GET /repair-tickets/:ticketId/invoice-preview`
 - `POST /repair-tickets/:ticketId/invoices`
 - `GET/POST /invoices/:id/payments`
 - `GET /payments/refund-approvers`
@@ -29,7 +30,9 @@ Cashiers create invoices, record payments, and execute approved refunds. Active 
 ## Business rules
 
 - Exactly one invoice may exist per ticket, and only while the locked ticket is `COMPLETED`.
-- The newest accepted quotation supplies the item subtotal, discount, tax, and total. Client totals are never accepted.
+- The accepted diagnosis estimate supplies labor/other line totals, discount, and tax. Provisional quotation part lines are excluded from billing; client totals are never accepted.
+- The part subtotal uses cumulative quantities actually fulfilled by inventory and each request item's snapshotted unit price. A repair-time part does not need to appear in the diagnosis estimate to be billed after warehouse fulfillment.
+- Cashier preview and invoice detail expose the same server-derived `costBreakdown`: individual labor/other lines, fulfilled-part lines with SKU/unit, service and part subtotals, discount, tax, and final total. Preview is read-only; invoice creation locks and recalculates the data before writing.
 - Payment amounts are positive, limited to two decimal places, and checked in integer cents against the locked outstanding balance.
 - Each recorded payment is immediately `COMPLETED`; amount, method, reference, receiver, and paid time are never edited.
 - Refund applies to one whole `COMPLETED` payment. The row changes only to `REFUNDED`; the original amount and metadata remain intact.
@@ -47,7 +50,7 @@ Invoice collection uses `UNPAID → PARTIALLY_PAID → PAID`. Refunding one of m
 
 ## Transactions
 
-Invoice creation locks the ticket and accepted quotation snapshot. Payment/refund locks ticket, invoice, then payment where applicable. Balance/status, payment row, ticket history, notification, and audit evidence commit or roll back together.
+Invoice creation locks the ticket and accepted estimate items, then reads cumulative fulfilled-part totals and request-time price snapshots. Payment/refund locks ticket, invoice, then payment where applicable. Balance/status, payment row, ticket history, notification, and audit evidence commit or roll back together.
 
 ## Common errors
 

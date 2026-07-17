@@ -70,6 +70,14 @@ export const paymentController = {
     });
   },
 
+  async previewInvoice(request: Request, response: Response): Promise<Response> {
+    const { ticketId } = request.validated?.params as TicketInvoiceParams;
+    return sendSuccess(response, {
+      message: "Invoice preview retrieved successfully",
+      data: await paymentService.previewInvoice(actor(request), ticketId),
+    });
+  },
+
   async listPayments(request: Request, response: Response): Promise<Response> {
     const { id } = request.validated?.params as InvoiceIdParams;
     return sendSuccess(response, {

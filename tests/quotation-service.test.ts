@@ -128,7 +128,6 @@ function dependencies() {
     approve: vi.fn(),
     markSent: vi.fn(),
     recordCustomerResponse: vi.fn(),
-    countPartItems: vi.fn(),
     findActiveManagerIds: vi.fn(),
     createNotification: vi.fn(),
   };
@@ -154,7 +153,7 @@ function dependencies() {
 }
 
 describe("QuotationService", () => {
-  it("creates a versioned server-priced snapshot from an approved diagnosis", async () => {
+  it("creates a diagnosis estimate with labor and provisional parts", async () => {
     const deps = dependencies();
     deps.tickets.findById.mockResolvedValue(ticket());
     deps.repository.findCurrentByTicketForUpdate.mockResolvedValue(null);
@@ -196,9 +195,28 @@ describe("QuotationService", () => {
       connection,
       30,
       expect.arrayContaining([
-        expect.objectContaining({ partId: 4, unitPrice: 250, lineTotal: 500 }),
+        expect.objectContaining({ itemType: "LABOR", partId: null }),
+        expect.objectContaining({ itemType: "PART", partId: 4, quantity: 2 }),
       ]),
     );
+  });
+
+  it("does not create a supplemental quotation from repair-time part requests", async () => {
+    const deps = dependencies();
+    deps.tickets.findById.mockResolvedValue(ticket({ status: "WAITING_FOR_PARTS" }));
+    deps.repository.findCurrentByTicketForUpdate.mockResolvedValue(null);
+    deps.repository.findApprovedDiagnosisForUpdate.mockResolvedValue({
+      id: 20,
+      proposed_solution: "Replace display",
+      labor_cost: 250,
+    });
+    await expect(deps.service.create(
+      manager,
+      10,
+      { expiresAt: future },
+      metadata,
+    )).rejects.toMatchObject({ code: "TICKET_NOT_QUOTABLE" });
+    expect(deps.repository.create).not.toHaveBeenCalled();
   });
 
   it("supersedes an open version before creating the next one", async () => {
@@ -229,7 +247,7 @@ describe("QuotationService", () => {
     );
   });
 
-  it("uses the catalog price when a manager edits a part item", async () => {
+  it("lets a manager adjust provisional part estimates at catalog prices", async () => {
     const deps = dependencies();
     deps.repository.findById.mockResolvedValue(quotation());
     deps.tickets.findById.mockResolvedValue(ticket());
@@ -247,7 +265,6 @@ describe("QuotationService", () => {
       { items: [{ itemType: "PART", partId: 4, quantity: 2 }] },
       metadata,
     );
-
     expect(deps.repository.updateDraft).toHaveBeenCalledWith(
       connection,
       30,
@@ -290,7 +307,7 @@ describe("QuotationService", () => {
     );
   });
 
-  it("lets only the owner accept and selects WAITING_FOR_PARTS from snapshot items", async () => {
+  it("starts repair after the customer accepts the diagnosis estimate", async () => {
     const deps = dependencies();
     const sent = quotation({ status: "SENT", sent_at: now });
     deps.repository.findById
@@ -300,7 +317,6 @@ describe("QuotationService", () => {
     deps.tickets.findById.mockResolvedValue(
       ticket({ status: "WAITING_FOR_CUSTOMER_APPROVAL" }),
     );
-    deps.repository.countPartItems.mockResolvedValue(1);
     deps.repository.findActiveManagerIds.mockResolvedValue([5]);
     deps.repository.listItemsByQuotationIds.mockResolvedValue(itemRows());
 
@@ -316,7 +332,7 @@ describe("QuotationService", () => {
     expect(deps.tickets.updateStatus).toHaveBeenCalledWith(
       connection,
       10,
-      "WAITING_FOR_PARTS",
+      "REPAIRING",
     );
   });
 
@@ -355,4 +371,3 @@ describe("QuotationService", () => {
     });
   });
 });
-

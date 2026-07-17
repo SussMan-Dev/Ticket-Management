@@ -38,6 +38,7 @@ export interface PartRequestItemRow extends RowDataPacket {
   part_is_active: number | boolean;
   requested_quantity: number;
   fulfilled_quantity: number;
+  unit_price: number;
   created_at: Date;
 }
 
@@ -55,6 +56,9 @@ export interface PartRequestItem {
   requestedQuantity: number;
   fulfilledQuantity: number;
   remainingQuantity: number;
+  unitPrice: number;
+  requestedLineTotal: number;
+  fulfilledLineTotal: number;
   createdAt: Date;
 }
 
@@ -86,6 +90,9 @@ export function toPartRequestItem(row: PartRequestItemRow): PartRequestItem {
     requestedQuantity: row.requested_quantity,
     fulfilledQuantity: row.fulfilled_quantity,
     remainingQuantity: row.requested_quantity - row.fulfilled_quantity,
+    unitPrice: row.unit_price,
+    requestedLineTotal: row.requested_quantity * row.unit_price,
+    fulfilledLineTotal: row.fulfilled_quantity * row.unit_price,
     createdAt: row.created_at,
   };
 }
@@ -109,4 +116,3 @@ export function toPartRequest(
     updatedAt: row.updated_at,
   };
 }
-

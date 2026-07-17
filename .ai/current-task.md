@@ -2,26 +2,31 @@
 
 ## Goal
 
-Extend the customer-friendly frontend to every system role and standardize all displayed monetary values as Vietnamese đồng (`VNĐ`) without changing backend contracts.
+Fix the runtime failure on the invoice UI after the itemized invoice release.
 
 ## Status
 
 Completed on 2026-07-16.
 
-## Delivered
+## Root cause
 
-- Added role-specific dashboard themes, three-step workflow guidance, and task shortcuts for Receptionist, Technician, Manager, Admin, Inventory Staff, and Cashier.
-- Replaced implementation-facing wording with plain Vietnamese in customer administration, account management, diagnosis, quotation, parts, inventory requests, reports, payment, and delivery screens.
-- Improved inventory usability with Vietnamese stock status/transaction labels, clearer low-stock and adjustment copy, and role-aware parts/report descriptions.
-- Standardized every displayed monetary value through the shared formatter using the `VNĐ` suffix; added `VNĐ` to monetary input labels and removed the obsolete configurable currency environment variable.
-- Preserved all existing API calls, authorization, ownership, business rules, and backend-calculated monetary values.
-- Updated frontend documentation and added regression coverage for the fixed Vietnamese currency format.
+- The Vite frontend had already loaded the new itemized-invoice code, but localhost port 3000 was still served by a Node process started before the new backend route and response contract existed.
+- The live `GET /invoices/:id` response therefore omitted `costBreakdown`, causing the invoice detail component to read missing runtime data. The new invoice-preview route also returned `ROUTE_NOT_FOUND`.
+
+## Completed
+
+- Replaced the stale localhost backend process with the workspace development server so current payment routes and response contracts are active.
+- Verified the live invoice list still succeeds and the live invoice-detail response now contains an itemized `costBreakdown`.
+- Verified the preview route is registered; a Manager receives the expected role denial instead of route-not-found.
+- Added a defensive fallback to the shared invoice breakdown component so an older or temporarily mismatched backend response shows a reload message instead of crashing the page.
+- Added regression coverage for the missing-breakdown fallback.
+- No database, SQL, API contract, business rule, dependency, or authorization change was introduced.
 
 ## Verification
 
-- [x] Frontend TypeScript typecheck passed
+- [x] Live invoice detail returned HTTP 200 with `costBreakdown` and two cost lines
+- [x] Live preview endpoint is registered and enforces Cashier authorization
+- [x] Frontend typecheck passed
 - [x] Frontend lint passed with zero warnings
+- [x] All 44 frontend tests passed across 15 files
 - [x] Frontend production build passed
-- [x] All 39 frontend tests passed across 14 files
-- [x] Git diff whitespace check passed
-- [x] No backend, SQL, API, database, authorization, transaction, or package change was introduced

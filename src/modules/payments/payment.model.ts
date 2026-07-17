@@ -73,6 +73,24 @@ export interface AcceptedQuotationSnapshotRow extends RowDataPacket {
   total_amount: number;
 }
 
+export interface AcceptedQuotationItemPricingRow extends RowDataPacket {
+  item_type: "LABOR" | "PART" | "OTHER";
+  description: string;
+  part_id: number | null;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+}
+
+export interface FulfilledPartTotalRow extends RowDataPacket {
+  part_id: number;
+  part_sku: string;
+  part_name: string;
+  part_unit: string;
+  quantity: number;
+  unit_price: number;
+}
+
 export interface ActiveManagerRow extends RowDataPacket {
   id: number;
   full_name: string;
@@ -93,6 +111,46 @@ export interface Invoice {
   createdBy: { id: number; fullName: string };
   createdAt: Date;
   updatedAt: Date;
+}
+
+export type InvoiceCostLineType = "LABOR" | "OTHER" | "PART";
+export type InvoiceCostLineSource =
+  | "ACCEPTED_QUOTATION"
+  | "FULFILLED_PART_REQUEST";
+
+export interface InvoiceCostLine {
+  type: InvoiceCostLineType;
+  description: string;
+  part: {
+    id: number;
+    sku: string;
+    name: string;
+    unit: string;
+  } | null;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  source: InvoiceCostLineSource;
+}
+
+export interface InvoiceCostBreakdown {
+  lines: InvoiceCostLine[];
+  serviceSubtotal: number;
+  partSubtotal: number;
+  subtotal: number;
+  discountAmount: number;
+  taxAmount: number;
+  totalAmount: number;
+}
+
+export interface InvoicePreview {
+  ticket: { id: number; ticketCode: string; title: string };
+  customer: { id: number; fullName: string };
+  costBreakdown: InvoiceCostBreakdown;
+}
+
+export interface InvoiceDetail extends Invoice {
+  costBreakdown: InvoiceCostBreakdown;
 }
 
 export interface Payment {

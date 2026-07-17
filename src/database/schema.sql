@@ -333,6 +333,7 @@ CREATE TABLE part_request_items (
   part_id BIGINT UNSIGNED NOT NULL,
   requested_quantity INT NOT NULL,
   fulfilled_quantity INT NOT NULL DEFAULT 0,
+  unit_price DECIMAL(12, 2) NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_part_request_items_request FOREIGN KEY (part_request_id) REFERENCES part_requests (id),
   CONSTRAINT fk_part_request_items_part FOREIGN KEY (part_id) REFERENCES parts (id),
@@ -340,6 +341,7 @@ CREATE TABLE part_request_items (
   CONSTRAINT chk_part_request_items_fulfilled CHECK (
     fulfilled_quantity >= 0 AND fulfilled_quantity <= requested_quantity
   ),
+  CONSTRAINT chk_part_request_items_unit_price CHECK (unit_price >= 0),
   UNIQUE KEY uk_part_request_items (part_request_id, part_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 

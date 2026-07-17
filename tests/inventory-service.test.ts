@@ -92,6 +92,7 @@ function requestItem(overrides: Record<string, unknown> = {}): PartRequestItemRo
     part_is_active: true,
     requested_quantity: 2,
     fulfilled_quantity: 0,
+    unit_price: 300,
     created_at: new Date(),
     ...overrides,
   } as PartRequestItemRow;
@@ -179,7 +180,7 @@ describe("InventoryService", () => {
     expect(deps.repository.createItems).toHaveBeenCalledWith(
       connection,
       15,
-      [{ partId: 4, requestedQuantity: 2 }],
+      [{ partId: 4, requestedQuantity: 2, unitPrice: 300 }],
     );
     expect(deps.repository.createNotification).toHaveBeenCalledTimes(2);
   });

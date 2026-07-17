@@ -133,7 +133,7 @@ Rules: active assigned author; one open diagnosis per ticket; state-bound editin
 
 ## Quotations
 
-Status: implemented in Phase 6 with approved-diagnosis snapshots, server-owned catalog pricing/totals, version supersession, expiry, ownership/assignment scoping, notifications, audit, and atomic ticket history.
+Status: implemented in Phase 6 with approved-diagnosis estimates, server-owned catalog pricing/totals, version supersession, expiry, ownership/assignment scoping, notifications, audit, and atomic ticket history.
 
 Controller/service/repository: `quotationController`, `quotationService`, `quotationRepository`. Tables: `quotations`, `quotation_items`, `diagnoses`, `parts`, `repair_tickets`, `ticket_status_history`.
 
@@ -149,7 +149,7 @@ Controller/service/repository: `quotationController`, `quotationService`, `quota
 | `POST /quotations/:id/accept` | Owning CUSTOMER | Yes | 6 |
 | `POST /quotations/:id/reject` | Owning CUSTOMER | Yes | 6 |
 
-Rules: approved diagnosis; server-generated initial items; catalog-owned PART prices; server totals; unique version; supersede prior open quote; future expiry before sending; owner response only while sent and unexpired; transition ticket/history atomically. Accepted quotes move to parts waiting when they contain part lines, otherwise repair; rejected quotes move to customer rejected; materialized expiry returns to quotation waiting.
+Rules: approved diagnosis; one initial estimate containing labor and provisional diagnosis PART lines at catalog-owned prices; no stock approval or reservation from those provisional lines; no supplemental repair-time quotation; server totals; unique version; supersede prior open estimate; future expiry before sending; owner response only while sent and unexpired; acceptance moves the ticket to repair; rejection moves it to customer rejected; materialized expiry returns to quotation waiting; transition ticket/history atomically.
 
 ## Parts and Inventory
 
@@ -173,11 +173,11 @@ Controllers/services/repositories: `part*` and `inventory*`. Tables: `parts`, `p
 | `POST /part-requests/:id/fulfill` | INVENTORY_STAFF | Yes | 7 |
 | `POST /part-requests/:id/reject` | INVENTORY_STAFF | Yes | 7 |
 
-Rules: new parts start at zero balance; technician reads omit purchase prices; request lines use positive quantities and active unique parts; technicians require active assignment and own-request scope; lock stock rows in stable order; no negative balance; movement and balance are atomic; partial fulfillment is bounded by outstanding request and availability; every signed adjustment has actor/reason; ticket/history changes are atomic. Phase 7 exposes no return or cancellation endpoint.
+Rules: new parts start at zero balance; technician reads omit purchase prices; request lines use positive quantities and active unique parts and snapshot the current selling price as `unitPrice`; technicians require active assignment and own-request scope; warehouse approval/fulfillment does not require a supplemental customer quotation; fulfilled quantity and its request-time price become the PART amount charged at invoice creation; lock stock rows in stable order; no negative balance; movement and balance are atomic; partial fulfillment is bounded by outstanding request and availability; every signed adjustment has actor/reason; ticket/history changes are atomic. No return or cancellation endpoint is exposed.
 
 ## Repair Logs and Testing
 
-Status: implemented in Phase 8 with active-assignee writes, immutable completed logs, fulfilled-part attribution, append-only tests, guarded technical completion/rework, audit/notification, and sanitized timeline reads.
+Status: implemented in Phase 8 with active-assignee writes during repair and parts waiting, immutable completed logs, fulfilled-part attribution, append-only tests, guarded technical completion/rework, audit/notification, and sanitized timeline reads.
 
 Controller/service/repository: `repairActionController`, `repairActionService`, `repairActionRepository`. Tables: `repair_logs`, `repair_log_parts`, `test_results`, inventory and ticket history.
 
@@ -190,11 +190,11 @@ Controller/service/repository: `repairActionController`, `repairActionService`, 
 | `POST /repair-tickets/:ticketId/test-results` | Assigned TECHNICIAN | Yes when testing starts | 8 |
 | `POST /repair-tickets/:ticketId/complete-testing` | Assigned TECHNICIAN | Yes | 8 |
 
-Rules: active assigned author; `REPAIRING`-only log mutation; non-null finish makes log/parts immutable; cumulative part attribution is bounded by fulfilled ticket quantities and never decrements stock twice; tests require a finished log and are append-only; the first test starts `TESTING`; newest normalized named results must all pass for `COMPLETED`, otherwise completion returns to `REPAIRING`; status/history/notification/audit are atomic; customer reads are sanitized.
+Rules: active assigned author; repair-log mutation is allowed while `REPAIRING` or `WAITING_FOR_PARTS`; non-null finish makes log/parts immutable; cumulative part attribution is bounded by fulfilled ticket quantities and never decrements stock twice; tests remain blocked while waiting for parts, require every repair log to be finished, and are append-only; the first test starts `TESTING`; newest normalized named results must all pass for `COMPLETED`, otherwise completion returns to `REPAIRING`; status/history/notification/audit are atomic; customer reads are sanitized.
 
 ## Invoices and Payments
 
-Status: implemented in Phase 9 with server-calculated quotation snapshots, locked balances, partial/full collection, immutable payment history, manager-approved whole-payment refunds, audit/notification, and guarded delivery readiness.
+Status: implemented in Phase 9 with server-calculated itemized service and fulfilled-part totals, cashier preview, locked balances, partial/full collection, immutable payment history, manager-approved whole-payment refunds, audit/notification, and guarded delivery readiness.
 
 Controller/service/repository: `paymentController`, `paymentService`, `paymentRepository` including invoice operations. Tables: `invoices`, `payments`, `repair_tickets`, `ticket_status_history`, `audit_logs`.
 
@@ -202,13 +202,14 @@ Controller/service/repository: `paymentController`, `paymentService`, `paymentRe
 |---|---|---|---|
 | `GET /invoices` | CASHIER, MANAGER; customer own through filter | No | 9 |
 | `GET /invoices/:id` | CASHIER, MANAGER, owning CUSTOMER | No | 9 |
+| `GET /repair-tickets/:ticketId/invoice-preview` | CASHIER | No | Extension |
 | `POST /repair-tickets/:ticketId/invoices` | CASHIER | Yes | 9 |
 | `GET /invoices/:id/payments` | CASHIER, MANAGER, owning CUSTOMER | No | 9 |
 | `POST /invoices/:id/payments` | CASHIER | Yes | 9 |
 | `GET /payments/refund-approvers` | CASHIER | No | 9 |
 | `POST /payments/:id/refund` | CASHIER with MANAGER approval | Yes | 9 |
 
-Rules: one invoice per locked `COMPLETED` ticket; accepted-quotation totals only; payment precision and balance checked in cents under ticket/invoice locks; no overpayment; completed payment fields remain immutable; whole-payment refund requires a distinct active manager and reason; full payment sets `READY_FOR_DELIVERY`, while a pre-delivery refund restores `COMPLETED`; all financial/status/history/notification/audit writes are atomic.
+Rules: one invoice per locked `COMPLETED` ticket; accepted estimate LABOR/OTHER lines form the service base while provisional estimate PART lines are excluded; actual PART totals come from inventory-fulfilled quantities at request-time unit-price snapshots; preview and authorized invoice detail return the server-derived lines/subtotals/discount/tax/total, while create recalculates them transactionally; payment precision and balance checked in cents under ticket/invoice locks; no overpayment; completed payment fields remain immutable; whole-payment refund requires a distinct active manager and reason; full payment sets `READY_FOR_DELIVERY`, while a pre-delivery refund restores `COMPLETED`; all financial/status/history/notification/audit writes are atomic.
 
 ## Notifications
 

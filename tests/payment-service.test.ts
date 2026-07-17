@@ -109,6 +109,8 @@ function dependencies() {
     findInvoiceById: vi.fn(),
     findInvoiceByTicket: vi.fn(),
     findAcceptedQuotationSnapshot: vi.fn(),
+    listAcceptedQuotationItems: vi.fn().mockResolvedValue([]),
+    listFulfilledPartTotals: vi.fn().mockResolvedValue([]),
     createInvoice: vi.fn().mockResolvedValue(40),
     setInvoiceCode: vi.fn(),
     updateInvoiceBalance: vi.fn(),
@@ -142,6 +144,50 @@ function dependencies() {
 }
 
 describe("PaymentService", () => {
+  it("previews every server-derived cost before a cashier issues the invoice", async () => {
+    const deps = dependencies();
+    deps.tickets.findById.mockResolvedValue(ticket());
+    deps.repository.findInvoiceByTicket.mockResolvedValue(null);
+    deps.repository.findAcceptedQuotationSnapshot.mockResolvedValue({
+      id: 30,
+      subtotal: 1_000,
+      discount_amount: 100,
+      tax_amount: 50,
+      total_amount: 950,
+    });
+    deps.repository.listAcceptedQuotationItems.mockResolvedValue([
+      { item_type: "LABOR", description: "Repair labor", part_id: null, quantity: 1, unit_price: 400, line_total: 400 },
+      { item_type: "PART", description: "Provisional screen", part_id: 4, quantity: 2, unit_price: 300, line_total: 600 },
+    ]);
+    deps.repository.listFulfilledPartTotals.mockResolvedValue([
+      { part_id: 4, part_sku: "SCR-01", part_name: "Screen assembly", part_unit: "piece", quantity: 1, unit_price: 300 },
+    ]);
+
+    const result = await deps.service.previewInvoice(cashier, 10);
+
+    expect(result).toMatchObject({
+      ticket: { id: 10, ticketCode: "RT-2026-000010" },
+      customer: { id: 2, fullName: "Customer" },
+      costBreakdown: {
+        serviceSubtotal: 400,
+        partSubtotal: 300,
+        subtotal: 700,
+        discountAmount: 100,
+        taxAmount: 50,
+        totalAmount: 650,
+      },
+    });
+    expect(result.costBreakdown.lines).toEqual([
+      expect.objectContaining({ type: "LABOR", lineTotal: 400 }),
+      expect.objectContaining({
+        type: "PART",
+        lineTotal: 300,
+        part: expect.objectContaining({ sku: "SCR-01" }),
+      }),
+    ]);
+    expect(deps.repository.createInvoice).not.toHaveBeenCalled();
+  });
+
   it("creates an invoice from the accepted server-side quotation snapshot", async () => {
     const deps = dependencies();
     deps.tickets.findById.mockResolvedValue(ticket());
@@ -153,6 +199,27 @@ describe("PaymentService", () => {
       tax_amount: 50,
       total_amount: 950,
     });
+    deps.repository.listAcceptedQuotationItems.mockResolvedValue([
+      {
+        item_type: "LABOR",
+        description: "Screen replacement labor",
+        part_id: null,
+        quantity: 1,
+        unit_price: 400,
+        line_total: 400,
+      },
+      {
+        item_type: "PART",
+        description: "Screen assembly",
+        part_id: 4,
+        quantity: 2,
+        unit_price: 300,
+        line_total: 600,
+      },
+    ]);
+    deps.repository.listFulfilledPartTotals.mockResolvedValue([
+      { part_id: 4, part_sku: "SCR-01", part_name: "Screen assembly", part_unit: "piece", quantity: 2, unit_price: 300 },
+    ]);
     deps.repository.findInvoiceById.mockResolvedValue(invoice({
       subtotal: 1_000,
       discount_amount: 100,
@@ -181,6 +248,67 @@ describe("PaymentService", () => {
     expect(deps.auditLogs.create).toHaveBeenCalledWith(
       connection,
       expect.objectContaining({ action: "INVOICE_CREATED" }),
+    );
+  });
+
+  it("charges the quantity fulfilled by inventory during repair", async () => {
+    const deps = dependencies();
+    deps.tickets.findById.mockResolvedValue(ticket());
+    deps.repository.findInvoiceByTicket.mockResolvedValue(null);
+    deps.repository.findAcceptedQuotationSnapshot.mockResolvedValue({
+      id: 30,
+      subtotal: 1_000,
+      discount_amount: 0,
+      tax_amount: 0,
+      total_amount: 1_000,
+    });
+    deps.repository.listAcceptedQuotationItems.mockResolvedValue([
+      { item_type: "LABOR", description: "Repair labor", part_id: null, quantity: 1, unit_price: 400, line_total: 400 },
+      { item_type: "PART", description: "Screen assembly", part_id: 4, quantity: 2, unit_price: 300, line_total: 600 },
+    ]);
+    deps.repository.listFulfilledPartTotals.mockResolvedValue([
+      { part_id: 4, part_sku: "SCR-01", part_name: "Screen assembly", part_unit: "piece", quantity: 1, unit_price: 300 },
+    ]);
+    deps.repository.findInvoiceById.mockResolvedValue(invoice({
+      subtotal: 700,
+      total_amount: 700,
+    }));
+
+    await deps.service.createInvoice(cashier, 10, metadata);
+
+    expect(deps.repository.createInvoice).toHaveBeenCalledWith(
+      connection,
+      expect.objectContaining({ subtotal: 700, totalAmount: 700 }),
+    );
+  });
+
+  it("charges fulfilled repair parts even when they were absent from the diagnosis estimate", async () => {
+    const deps = dependencies();
+    deps.tickets.findById.mockResolvedValue(ticket());
+    deps.repository.findInvoiceByTicket.mockResolvedValue(null);
+    deps.repository.findAcceptedQuotationSnapshot.mockResolvedValue({
+      id: 30,
+      subtotal: 400,
+      discount_amount: 0,
+      tax_amount: 0,
+      total_amount: 400,
+    });
+    deps.repository.listAcceptedQuotationItems.mockResolvedValue([
+      { item_type: "LABOR", description: "Repair labor", part_id: null, quantity: 1, unit_price: 400, line_total: 400 },
+    ]);
+    deps.repository.listFulfilledPartTotals.mockResolvedValue([
+      { part_id: 4, part_sku: "SCR-01", part_name: "Screen assembly", part_unit: "piece", quantity: 1, unit_price: 500 },
+    ]);
+    deps.repository.findInvoiceById.mockResolvedValue(invoice({
+      subtotal: 900,
+      total_amount: 900,
+    }));
+
+    await deps.service.createInvoice(cashier, 10, metadata);
+
+    expect(deps.repository.createInvoice).toHaveBeenCalledWith(
+      connection,
+      expect.objectContaining({ subtotal: 900, totalAmount: 900 }),
     );
   });
 
@@ -305,6 +433,38 @@ describe("PaymentService", () => {
 
     await expect(deps.service.getInvoice(customer, 40))
       .rejects.toMatchObject({ code: "INVOICE_ACCESS_DENIED" });
+  });
+
+  it("returns the itemized cost breakdown on invoice detail", async () => {
+    const deps = dependencies();
+    deps.repository.findInvoiceById.mockResolvedValue(invoice({
+      subtotal: 700,
+      discount_amount: 100,
+      tax_amount: 50,
+      total_amount: 650,
+    }));
+    deps.repository.findAcceptedQuotationSnapshot.mockResolvedValue({
+      id: 30,
+      subtotal: 1_000,
+      discount_amount: 100,
+      tax_amount: 50,
+      total_amount: 950,
+    });
+    deps.repository.listAcceptedQuotationItems.mockResolvedValue([
+      { item_type: "LABOR", description: "Repair labor", part_id: null, quantity: 1, unit_price: 400, line_total: 400 },
+    ]);
+    deps.repository.listFulfilledPartTotals.mockResolvedValue([
+      { part_id: 4, part_sku: "SCR-01", part_name: "Screen assembly", part_unit: "piece", quantity: 1, unit_price: 300 },
+    ]);
+
+    const result = await deps.service.getInvoice(customer, 40);
+
+    expect(result.costBreakdown).toMatchObject({
+      serviceSubtotal: 400,
+      partSubtotal: 300,
+      subtotal: 700,
+      totalAmount: 650,
+    });
   });
 
   it("returns only active manager refund approvers to a cashier", async () => {

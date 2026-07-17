@@ -49,6 +49,11 @@ type TransactionRunner = <T>(
 type RepairLogView = RepairLog | CustomerRepairLog;
 type TestResultView = TestResult | CustomerTestResult;
 
+const REPAIR_LOG_WRITABLE_STATUSES = new Set<TicketStatus>([
+  "WAITING_FOR_PARTS",
+  "REPAIRING",
+]);
+
 function normalizeMetadata(metadata: RequestMetadata): RequestMetadata {
   return {
     ipAddress: metadata.ipAddress?.slice(0, 45) ?? null,
@@ -89,9 +94,9 @@ export class RepairActionService {
     return this.runInTransaction(async (connection) => {
       const ticket = await this.requireTicket(connection, ticketId, true);
       await this.assertActiveAssignee(connection, actor, ticketId);
-      if (ticket.status !== "REPAIRING") {
+      if (!REPAIR_LOG_WRITABLE_STATUSES.has(ticket.status)) {
         throw new ConflictError(
-          "Ticket is not in the repairing state",
+          "Repair logs may be created only while repairing or waiting for parts",
           "TICKET_NOT_REPAIRING",
         );
       }
@@ -149,9 +154,9 @@ export class RepairActionService {
           "REPAIR_LOG_AUTHOR_REQUIRED",
         );
       }
-      if (ticket.status !== "REPAIRING") {
+      if (!REPAIR_LOG_WRITABLE_STATUSES.has(ticket.status)) {
         throw new ConflictError(
-          "Repair logs may be updated only while the ticket is being repaired",
+          "Repair logs may be updated only while repairing or waiting for parts",
           "TICKET_NOT_REPAIRING",
         );
       }
@@ -244,6 +249,12 @@ export class RepairActionService {
           "COMPLETED_REPAIR_LOG_REQUIRED",
         );
       }
+      if (await this.repository.hasUnfinishedRepairLog(connection, ticketId)) {
+        throw new ConflictError(
+          "Finish all repair logs before starting testing",
+          "UNFINISHED_REPAIR_LOG_EXISTS",
+        );
+      }
       if (ticket.status === "REPAIRING") {
         await this.transitionTicket(
           connection,
@@ -292,6 +303,12 @@ export class RepairActionService {
         throw new ConflictError(
           "Ticket is not in the testing state",
           "TICKET_NOT_TESTING",
+        );
+      }
+      if (await this.repository.hasUnfinishedRepairLog(connection, ticketId)) {
+        throw new ConflictError(
+          "Finish all repair logs before completing testing",
+          "UNFINISHED_REPAIR_LOG_EXISTS",
         );
       }
 

@@ -28,7 +28,11 @@ import {
   toInvoice,
   toPayment,
   type Invoice,
+  type InvoiceCostBreakdown,
+  type InvoiceCostLine,
+  type InvoiceDetail,
   type InvoicePaymentStatus,
+  type InvoicePreview,
   type InvoiceRow,
   type Payment,
   type PaymentRow,
@@ -100,54 +104,77 @@ export class PaymentService {
   public async getInvoice(
     actor: Express.AuthenticatedUser,
     invoiceId: number,
-  ): Promise<Invoice> {
+  ): Promise<InvoiceDetail> {
     const invoice = await this.requireInvoice(pool, invoiceId);
     this.assertInvoiceReadScope(actor, invoice);
-    return toInvoice(invoice);
+    const pricing = await this.calculateInvoiceCostBreakdown(
+      pool,
+      invoice.ticket_id,
+    );
+    return { ...toInvoice(invoice), costBreakdown: pricing.costBreakdown };
+  }
+
+  public async previewInvoice(
+    actor: Express.AuthenticatedUser,
+    ticketId: number,
+  ): Promise<InvoicePreview> {
+    this.assertCashier(actor);
+    const ticket = await this.requireTicket(pool, ticketId);
+    this.assertTicketCanBeInvoiced(ticket);
+    if (await this.repository.findInvoiceByTicket(pool, ticketId)) {
+      throw new ConflictError(
+        "This repair ticket already has an invoice",
+        "INVOICE_ALREADY_EXISTS",
+      );
+    }
+    const pricing = await this.calculateInvoiceCostBreakdown(pool, ticketId);
+    return {
+      ticket: {
+        id: ticket.id,
+        ticketCode: ticket.ticket_code,
+        title: ticket.title,
+      },
+      customer: {
+        id: ticket.customer_id,
+        fullName: ticket.customer_name,
+      },
+      costBreakdown: pricing.costBreakdown,
+    };
   }
 
   public async createInvoice(
     actor: Express.AuthenticatedUser,
     ticketId: number,
     metadata: RequestMetadata,
-  ): Promise<Invoice> {
+  ): Promise<InvoiceDetail> {
     this.assertCashier(actor);
     const requestMetadata = normalizeMetadata(metadata);
     return this.runInTransaction(async (connection) => {
       const ticket = await this.requireTicket(connection, ticketId, true);
-      if (ticket.status !== "COMPLETED") {
-        throw new ConflictError(
-          "Only a completed repair ticket may be invoiced",
-          "TICKET_NOT_COMPLETED",
-        );
-      }
+      this.assertTicketCanBeInvoiced(ticket);
       if (await this.repository.findInvoiceByTicket(connection, ticketId)) {
         throw new ConflictError(
           "This repair ticket already has an invoice",
           "INVOICE_ALREADY_EXISTS",
         );
       }
-      const quotation = await this.repository.findAcceptedQuotationSnapshot(
+      const pricing = await this.calculateInvoiceCostBreakdown(
         connection,
         ticketId,
+        true,
       );
-      if (!quotation) {
-        throw new ConflictError(
-          "An accepted quotation is required before invoicing",
-          "ACCEPTED_QUOTATION_REQUIRED",
-        );
-      }
-      const totalCents = toCents(quotation.total_amount);
+      const breakdown = pricing.costBreakdown;
+      const totalCents = toCents(breakdown.totalAmount);
       const initialStatus: InvoicePaymentStatus = totalCents === 0
         ? "PAID"
         : "UNPAID";
       const invoiceId = await this.repository.createInvoice(connection, {
         placeholderCode: `TMP-${randomUUID().replaceAll("-", "").slice(0, 20)}`,
         ticketId,
-        subtotal: fromCents(toCents(quotation.subtotal)),
-        discountAmount: fromCents(toCents(quotation.discount_amount)),
-        taxAmount: fromCents(toCents(quotation.tax_amount)),
-        totalAmount: fromCents(totalCents),
+        subtotal: breakdown.subtotal,
+        discountAmount: breakdown.discountAmount,
+        taxAmount: breakdown.taxAmount,
+        totalAmount: breakdown.totalAmount,
         paymentStatus: initialStatus,
         createdBy: actor.id,
       });
@@ -176,15 +203,22 @@ export class PaymentService {
         oldData: null,
         newData: {
           ticketId,
-          quotationId: quotation.id,
-          subtotal: quotation.subtotal,
-          discountAmount: quotation.discount_amount,
-          taxAmount: quotation.tax_amount,
-          totalAmount: quotation.total_amount,
+          quotationId: pricing.quotationId,
+          quotationRole: "ESTIMATE_BASE",
+          partPricingSource: "PART_REQUEST_SNAPSHOT",
+          nonPartSubtotal: breakdown.serviceSubtotal,
+          fulfilledPartsSubtotal: breakdown.partSubtotal,
+          subtotal: breakdown.subtotal,
+          discountAmount: breakdown.discountAmount,
+          taxAmount: breakdown.taxAmount,
+          totalAmount: breakdown.totalAmount,
         },
         ...requestMetadata,
       });
-      return toInvoice(await this.requireInvoice(connection, invoiceId));
+      return {
+        ...toInvoice(await this.requireInvoice(connection, invoiceId)),
+        costBreakdown: breakdown,
+      };
     });
   }
 
@@ -390,6 +424,93 @@ export class PaymentService {
     if (actor.role !== "CASHIER") {
       throw new ForbiddenError("Only cashiers may manage billing", "FORBIDDEN");
     }
+  }
+
+  private assertTicketCanBeInvoiced(ticket: RepairTicketRow): void {
+    if (ticket.status !== "COMPLETED") {
+      throw new ConflictError(
+        "Only a completed repair ticket may be invoiced",
+        "TICKET_NOT_COMPLETED",
+      );
+    }
+  }
+
+  private async calculateInvoiceCostBreakdown(
+    executor: DatabaseExecutor,
+    ticketId: number,
+    lockForUpdate = false,
+  ): Promise<{ quotationId: number; costBreakdown: InvoiceCostBreakdown }> {
+    const quotation = await this.repository.findAcceptedQuotationSnapshot(
+      executor,
+      ticketId,
+      lockForUpdate,
+    );
+    if (!quotation) {
+      throw new ConflictError(
+        "An accepted quotation is required before invoicing",
+        "ACCEPTED_QUOTATION_REQUIRED",
+      );
+    }
+    const quotationItems = await this.repository.listAcceptedQuotationItems(
+      executor,
+      quotation.id,
+      lockForUpdate,
+    );
+    const fulfilledParts = await this.repository.listFulfilledPartTotals(
+      executor,
+      ticketId,
+    );
+    const lines: InvoiceCostLine[] = [];
+    let serviceSubtotalCents = 0;
+    for (const item of quotationItems) {
+      if (item.item_type === "PART") continue;
+      const lineTotalCents = toCents(item.line_total);
+      serviceSubtotalCents += lineTotalCents;
+      lines.push({
+        type: item.item_type,
+        description: item.description,
+        part: null,
+        quantity: item.quantity,
+        unitPrice: item.unit_price,
+        lineTotal: fromCents(lineTotalCents),
+        source: "ACCEPTED_QUOTATION",
+      });
+    }
+    let partSubtotalCents = 0;
+    for (const fulfilled of fulfilledParts) {
+      const lineTotalCents = toCents(fulfilled.quantity * fulfilled.unit_price);
+      partSubtotalCents += lineTotalCents;
+      lines.push({
+        type: "PART",
+        description: fulfilled.part_name,
+        part: {
+          id: fulfilled.part_id,
+          sku: fulfilled.part_sku,
+          name: fulfilled.part_name,
+          unit: fulfilled.part_unit,
+        },
+        quantity: fulfilled.quantity,
+        unitPrice: fulfilled.unit_price,
+        lineTotal: fromCents(lineTotalCents),
+        source: "FULFILLED_PART_REQUEST",
+      });
+    }
+    const subtotalCents = serviceSubtotalCents + partSubtotalCents;
+    const discountCents = toCents(quotation.discount_amount);
+    const taxCents = toCents(quotation.tax_amount);
+    const totalCents = Math.max(0, subtotalCents - discountCents + taxCents);
+    return {
+      quotationId: quotation.id,
+      costBreakdown: {
+        lines,
+        serviceSubtotal: fromCents(serviceSubtotalCents),
+        partSubtotal: fromCents(partSubtotalCents),
+        subtotal: fromCents(subtotalCents),
+        discountAmount: fromCents(discountCents),
+        taxAmount: fromCents(taxCents),
+        totalAmount: fromCents(totalCents),
+      },
+    };
   }
 
   private assertInvoiceReadScope(

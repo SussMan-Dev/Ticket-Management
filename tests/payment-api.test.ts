@@ -22,6 +22,15 @@ const invoice = {
   createdBy: { id: 7, fullName: "Cashier" },
   createdAt: now,
   updatedAt: now,
+  costBreakdown: {
+    lines: [],
+    serviceSubtotal: 1_000,
+    partSubtotal: 0,
+    subtotal: 1_000,
+    discountAmount: 0,
+    taxAmount: 0,
+    totalAmount: 1_000,
+  },
 };
 const payment = {
   id: 50,
@@ -50,6 +59,25 @@ function authenticate(role: "CUSTOMER" | "CASHIER" | "MANAGER") {
 }
 
 describe("payments API", () => {
+  it("lets a cashier preview the itemized invoice cost", async () => {
+    authenticate("CASHIER");
+    const preview = vi.spyOn(paymentService, "previewInvoice").mockResolvedValue({
+      ticket: { id: 10, ticketCode: "RT-2026-000010", title: "Screen failure" },
+      customer: { id: 2, fullName: "Customer" },
+      costBreakdown: invoice.costBreakdown,
+    });
+    const response = await request(app)
+      .get(`${env.API_PREFIX}/repair-tickets/10/invoice-preview`)
+      .set("Authorization", "Bearer token");
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.costBreakdown.totalAmount).toBe(1_000);
+    expect(preview).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 7, role: "CASHIER" }),
+      10,
+    );
+  });
+
   it("lets a cashier create an invoice for a completed ticket", async () => {
     authenticate("CASHIER");
     const create = vi.spyOn(paymentService, "createInvoice").mockResolvedValue(invoice);

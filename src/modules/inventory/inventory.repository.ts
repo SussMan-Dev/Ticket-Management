@@ -31,6 +31,12 @@ export interface PartRequestListRowsResult {
   total: number;
 }
 
+export interface CreatePartRequestItemRecord {
+  partId: number;
+  requestedQuantity: number;
+  unitPrice: number;
+}
+
 const requestColumns = `
   pr.id,
   pr.ticket_id,
@@ -134,6 +140,7 @@ export class InventoryRepository {
           p.is_active AS part_is_active,
           pri.requested_quantity,
           pri.fulfilled_quantity,
+          pri.unit_price,
           pri.created_at
         FROM part_request_items AS pri
         INNER JOIN parts AS p ON p.id = pri.part_id
@@ -162,18 +169,19 @@ export class InventoryRepository {
   public async createItems(
     connection: PoolConnection,
     requestId: number,
-    items: CreatePartRequestDto["items"],
+    items: CreatePartRequestItemRecord[],
   ): Promise<void> {
-    const valuesClause = items.map(() => "(?, ?, ?)").join(", ");
+    const valuesClause = items.map(() => "(?, ?, ?, ?)").join(", ");
     const params = items.flatMap((item) => [
       requestId,
       item.partId,
       item.requestedQuantity,
+      item.unitPrice,
     ]);
     await connection.execute<ResultSetHeader>(
       `
         INSERT INTO part_request_items (
-          part_request_id, part_id, requested_quantity
+          part_request_id, part_id, requested_quantity, unit_price
         )
         VALUES ${valuesClause}
       `,

@@ -117,6 +117,11 @@ export class InventoryService {
           "PART_NOT_AVAILABLE",
         );
       }
+      const activePartsById = new Map(activeParts.map((part) => [part.id, part]));
+      const requestItems = input.items.map((item) => ({
+        ...item,
+        unitPrice: activePartsById.get(item.partId)?.selling_price ?? 0,
+      }));
 
       const requestId = await this.repository.create(
         connection,
@@ -124,7 +129,7 @@ export class InventoryService {
         actor.id,
         input,
       );
-      await this.repository.createItems(connection, requestId, input.items);
+      await this.repository.createItems(connection, requestId, requestItems);
       if (ticket.status === "REPAIRING") {
         await this.transitionTicket(
           connection,
@@ -151,7 +156,7 @@ export class InventoryService {
         action: "PART_REQUEST_CREATED",
         entityType: "PART_REQUEST",
         entityId: requestId,
-        newData: { ticketId, items: input.items },
+        newData: { ticketId, items: requestItems },
         ...requestMetadata,
       });
       return this.requireHydratedRequest(connection, requestId);
@@ -271,7 +276,6 @@ export class InventoryService {
           "PART_REQUEST_NOT_FULFILLABLE",
         );
       }
-
       const requestItems = await this.repository.listItemsByRequestIds(
         connection,
         [requestId],

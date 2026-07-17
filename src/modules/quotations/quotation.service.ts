@@ -119,13 +119,6 @@ export class QuotationService {
         current = null;
       }
 
-      if (ticket.status !== "WAITING_FOR_QUOTATION") {
-        throw new ConflictError(
-          "Ticket is not ready for a quotation",
-          "TICKET_NOT_QUOTABLE",
-        );
-      }
-
       if (current?.status === "SENT") {
         throw new ConflictError(
           "The current quotation is still awaiting customer response",
@@ -141,6 +134,13 @@ export class QuotationService {
         throw new ConflictError(
           "An approved diagnosis is required before creating a quotation",
           "APPROVED_DIAGNOSIS_REQUIRED",
+        );
+      }
+
+      if (ticket.status !== "WAITING_FOR_QUOTATION") {
+        throw new ConflictError(
+          "Ticket is not ready for a quotation",
+          "TICKET_NOT_QUOTABLE",
         );
       }
 
@@ -203,7 +203,7 @@ export class QuotationService {
     return this.runInTransaction(async (connection) => {
       const ticket = await this.requireTicket(connection, reference.ticket_id, true);
       const current = await this.requireQuotation(connection, quotationId, true);
-      if (ticket.status !== "WAITING_FOR_QUOTATION") {
+      if (!this.isQuotationWorkState(ticket.status)) {
         throw new ConflictError(
           "Ticket is not waiting for a quotation",
           "TICKET_NOT_QUOTABLE",
@@ -434,9 +434,7 @@ export class QuotationService {
       );
       const targetStatus: TicketStatus = responseStatus === "REJECTED"
         ? "CUSTOMER_REJECTED"
-        : (await this.repository.countPartItems(connection, quotationId)) > 0
-          ? "WAITING_FOR_PARTS"
-          : "REPAIRING";
+        : "REPAIRING";
       await this.transitionTicket(
         connection,
         actor.id,
@@ -532,14 +530,17 @@ export class QuotationService {
         unitPrice: diagnosis.labor_cost,
         lineTotal: roundMoney(diagnosis.labor_cost),
       },
-      ...parts.map((part) => ({
-        itemType: "PART" as const,
-        partId: part.id,
-        description: partDescription(part),
-        quantity: part.quantity ?? 0,
-        unitPrice: part.selling_price,
-        lineTotal: roundMoney((part.quantity ?? 0) * part.selling_price),
-      })),
+      ...parts.map((part) => {
+        const quantity = part.quantity ?? 0;
+        return {
+          itemType: "PART" as const,
+          partId: part.id,
+          description: partDescription(part),
+          quantity,
+          unitPrice: part.selling_price,
+          lineTotal: roundMoney(quantity * part.selling_price),
+        };
+      }),
     ];
   }
 
@@ -629,7 +630,7 @@ export class QuotationService {
     quotation: QuotationRow,
     expectedStatus: QuotationRow["status"],
   ): void {
-    if (ticket.status !== "WAITING_FOR_QUOTATION") {
+    if (!this.isQuotationWorkState(ticket.status)) {
       throw new ConflictError(
         "Ticket is not waiting for a quotation",
         "TICKET_NOT_QUOTABLE",
@@ -641,6 +642,10 @@ export class QuotationService {
         "QUOTATION_INVALID_STATUS",
       );
     }
+  }
+
+  private isQuotationWorkState(status: TicketStatus): boolean {
+    return status === "WAITING_FOR_QUOTATION";
   }
 
   private assertManagerRole(actor: Express.AuthenticatedUser): void {

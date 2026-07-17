@@ -22,7 +22,7 @@ The standard route, controller, service, repository, model, schema, and DTO file
 - `GET /part-requests` and `GET /part-requests/:id` for inventory staff and managers, or the requesting technician's own records.
 - `POST /part-requests/:id/approve`, `/fulfill`, and `/reject` for inventory staff.
 
-Phase 7 does not expose return or cancellation endpoints. The schema's `RETURN` movement and `CANCELLED` request status remain reserved for a later workflow with an explicit original-issue reference.
+No return or cancellation endpoint is exposed. Both remain reserved for a future explicit workflow that reverses stock and billing consistently.
 
 ## Allowed roles
 
@@ -32,17 +32,20 @@ Inventory staff maintain catalog data, move stock, and approve/reject/fulfill re
 
 - A new request is allowed only while its ticket is `WAITING_FOR_PARTS` or `REPAIRING`, and only for the active assigned technician. Creating one during `REPAIRING` atomically returns the ticket to `WAITING_FOR_PARTS` with status history.
 - Request lines use active, unique parts and positive quantities.
-- Approval accepts only `PENDING` requests whose ticket is still waiting for parts. Rejection records the actor, reason, notification, and audit event.
+- Request creation snapshots each part's current selling price. Approval accepts only `PENDING` requests whose ticket is still waiting for parts; it does not require a supplemental customer quotation. Rejection records the actor, reason, notification, and audit event.
 - Fulfillment accepts only `APPROVED` or `PARTIALLY_FULFILLED` requests. Each quantity is positive and cannot exceed either the unfulfilled request quantity or current stock.
+- A request remains non-billable until fulfillment. Each quantity actually fulfilled becomes chargeable at the request's immutable unit-price snapshot.
 - Partial fulfillment is supported. When a request becomes fully fulfilled and no other open request remains for the ticket, the ticket atomically moves from `WAITING_FOR_PARTS` to `REPAIRING`.
+- While the ticket is `WAITING_FOR_PARTS`, the active assigned technician may continue documenting repair work, but testing remains blocked and repair-log part attribution is still limited to quantities already fulfilled by inventory.
 - Stock never becomes negative. Every balance change and its immutable `inventory_transactions` row are committed together.
 - Part creation cannot inject an opening balance; stock enters only through a recorded movement.
+- Repair-log part attribution remains operational evidence and does not control the invoice. Final part charges use inventory-fulfilled quantities and their request-time unit prices.
 
 ## State transitions
 
 Request `PENDING -> APPROVED -> PARTIALLY_FULFILLED -> FULFILLED`, with `PENDING -> REJECTED` as the Phase 7 rejection path.
 
-Ticket `REPAIRING -> WAITING_FOR_PARTS` when a new request is created, and `WAITING_FOR_PARTS -> REPAIRING` only after all open requests are fulfilled.
+Ticket `REPAIRING -> WAITING_FOR_PARTS` when a new request is created, then `WAITING_FOR_PARTS -> REPAIRING` when warehouse processing has fully fulfilled the final open request.
 
 ## Database tables
 

@@ -105,6 +105,7 @@ function dependencies() {
     listFulfilledPartTotals: vi.fn().mockResolvedValue([]),
     listUsedPartTotals: vi.fn().mockResolvedValue([]),
     hasFinishedRepairLog: vi.fn().mockResolvedValue(true),
+    hasUnfinishedRepairLog: vi.fn().mockResolvedValue(false),
     listTestResults: vi.fn().mockResolvedValue([]),
     createTestResult: vi.fn().mockResolvedValue(30),
     findTestResultById: vi.fn(),
@@ -152,6 +153,46 @@ describe("RepairActionService", () => {
     expect(deps.auditLogs.create).toHaveBeenCalledWith(
       connection,
       expect.objectContaining({ action: "REPAIR_LOG_CREATED" }),
+    );
+  });
+
+  it("allows the assigned technician to record work while waiting for parts", async () => {
+    const deps = dependencies();
+    deps.tickets.findById.mockResolvedValue(ticket({ status: "WAITING_FOR_PARTS" }));
+    deps.repository.findRepairLogById.mockResolvedValue(repairLog());
+
+    const result = await deps.service.createRepairLog(technician, 10, {
+      actionDescription: "Inspect connector while awaiting replacement",
+      parts: [],
+    }, metadata);
+
+    expect(result.id).toBe(20);
+    expect(deps.repository.createRepairLog).toHaveBeenCalledWith(
+      connection,
+      10,
+      technician.id,
+      expect.objectContaining({
+        actionDescription: "Inspect connector while awaiting replacement",
+      }),
+      expect.any(Date),
+    );
+  });
+
+  it("allows an unfinished repair log to be completed while waiting for parts", async () => {
+    const deps = dependencies();
+    deps.repository.findRepairLogById.mockResolvedValue(repairLog());
+    deps.tickets.findById.mockResolvedValue(ticket({ status: "WAITING_FOR_PARTS" }));
+    const finishedAt = new Date();
+
+    await deps.service.updateRepairLog(technician, 20, {
+      result: "Inspection complete",
+      finishedAt,
+    }, metadata);
+
+    expect(deps.repository.updateRepairLog).toHaveBeenCalledWith(
+      connection,
+      20,
+      { result: "Inspection complete", finishedAt },
     );
   });
 
@@ -214,6 +255,18 @@ describe("RepairActionService", () => {
       connection,
       expect.objectContaining({ fromStatus: "REPAIRING", toStatus: "TESTING" }),
     );
+  });
+
+  it("requires every repair log to be finished before testing", async () => {
+    const deps = dependencies();
+    deps.tickets.findById.mockResolvedValue(ticket());
+    deps.repository.hasUnfinishedRepairLog.mockResolvedValue(true);
+
+    await expect(deps.service.createTestResult(technician, 10, {
+      testName: "Display",
+      result: "PASS",
+    }, metadata)).rejects.toMatchObject({ code: "UNFINISHED_REPAIR_LOG_EXISTS" });
+    expect(deps.repository.createTestResult).not.toHaveBeenCalled();
   });
 
   it("completes testing when every latest named result passes", async () => {

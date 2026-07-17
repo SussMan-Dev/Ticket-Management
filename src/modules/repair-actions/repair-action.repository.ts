@@ -251,6 +251,22 @@ export class RepairActionRepository {
     return (rows[0]?.quantity ?? 0) > 0;
   }
 
+  public async hasUnfinishedRepairLog(
+    executor: DatabaseExecutor,
+    ticketId: number,
+  ): Promise<boolean> {
+    const [rows] = await executor.execute<Array<PartUsageTotalRow>>(
+      `
+        SELECT 1 AS part_id, COUNT(id) AS quantity
+        FROM repair_logs
+        WHERE ticket_id = ?
+          AND finished_at IS NULL
+      `,
+      [ticketId],
+    );
+    return (rows[0]?.quantity ?? 0) > 0;
+  }
+
   public async listTestResults(
     executor: DatabaseExecutor,
     ticketId: number,

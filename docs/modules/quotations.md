@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-Create versioned quotations from approved diagnoses, snapshot prices, manage manager approval/sending/expiry, and record the owning customer's response.
+Create versioned diagnosis estimates, snapshot provisional prices, manage manager approval/sending/expiry, and record the owning customer's repair decision.
 
 ## Main entities
 
@@ -28,18 +28,20 @@ Managers create, edit, submit, approve, and send. Active assigned technicians ha
 
 ## Business rules
 
-- Creation requires a ticket in the quotation stage and its latest approved diagnosis.
-- Initial labor and part lines are generated from the approved diagnosis. Part descriptions and current `selling_price` values are read and snapshotted by the server.
-- Draft edits may set `LABOR`/`OTHER` descriptions and prices. A `PART` edit sends only active `partId` and quantity; description and price remain server-authoritative.
+- Creation requires `WAITING_FOR_QUOTATION` and the latest approved diagnosis. It generates the labor line plus provisional diagnosis parts at current catalog selling prices.
+- The estimate is used only for the customer decision to proceed. Repair-time part requests do not create supplemental quotation versions.
+- Draft edits may adjust `LABOR`, `OTHER`, and provisional `PART` lines; catalog-owned part prices are always recalculated by the server.
 - Line totals and quotation totals are calculated by the server. Tax and discount remain zero until a separate configured policy exists.
 - Version is unique per ticket. A replacement supersedes an existing draft, pending, or approved version.
 - Sending requires an approved quotation and a future expiry. A customer response requires the sent, unexpired quotation and ticket ownership.
-- Accepting a quotation with part lines moves the ticket to `WAITING_FOR_PARTS`; otherwise it moves to `REPAIRING`. Rejection moves it to `CUSTOMER_REJECTED`.
+- Accepting the diagnosis estimate moves the ticket to `REPAIRING`, even when it contains provisional part candidates. Those candidates do not create a warehouse request or a fixed part charge. Rejection moves it to `CUSTOMER_REJECTED`.
 - Expiry is surfaced on reads and materialized transactionally when a customer responds or a manager creates a replacement. Materialization returns the ticket to `WAITING_FOR_QUOTATION`.
 
 ## State transitions
 
 `DRAFT` → `PENDING_APPROVAL` → `APPROVED` → `SENT` → `ACCEPTED` or `REJECTED`. A sent quotation may become `EXPIRED`; a replacement marks an earlier open version `SUPERSEDED`.
+
+The Manager frontend presents the internal `submit → approve → send` sequence as one confirmed “Duyệt và gửi khách hàng” action. It still calls the existing endpoints in order, preserves every server-side authorization/state check, and refreshes the quotation after a partial failure.
 
 ## Database tables
 

@@ -11,7 +11,9 @@ import type {
 } from "./payment.dto.js";
 import type {
   AcceptedQuotationSnapshotRow,
+  AcceptedQuotationItemPricingRow,
   ActiveManagerRow,
+  FulfilledPartTotalRow,
   InvoicePaymentStatus,
   InvoiceRow,
   PaymentRow,
@@ -181,10 +183,12 @@ export class PaymentRepository {
   }
 
   public async findAcceptedQuotationSnapshot(
-    connection: PoolConnection,
+    executor: DatabaseExecutor,
     ticketId: number,
+    lockForUpdate = false,
   ): Promise<AcceptedQuotationSnapshotRow | null> {
-    const [rows] = await connection.execute<AcceptedQuotationSnapshotRow[]>(
+    const lock = lockForUpdate ? "FOR UPDATE" : "";
+    const [rows] = await executor.execute<AcceptedQuotationSnapshotRow[]>(
       `
         SELECT
           q.id,
@@ -200,11 +204,67 @@ export class PaymentRepository {
         WHERE q.ticket_id = ? AND q.status = 'ACCEPTED'
         ORDER BY q.version DESC, q.id DESC
         LIMIT 1
-        FOR UPDATE
+        ${lock}
       `,
       [ticketId],
     );
     return rows[0] ?? null;
+  }
+
+  public async listAcceptedQuotationItems(
+    executor: DatabaseExecutor,
+    quotationId: number,
+    lockForUpdate = false,
+  ): Promise<AcceptedQuotationItemPricingRow[]> {
+    const lock = lockForUpdate ? "FOR UPDATE" : "";
+    const [rows] = await executor.execute<AcceptedQuotationItemPricingRow[]>(
+      `
+        SELECT
+          qi.item_type,
+          qi.description,
+          qi.part_id,
+          qi.quantity,
+          qi.unit_price,
+          qi.line_total
+        FROM quotation_items AS qi
+        WHERE qi.quotation_id = ?
+        ORDER BY qi.id ASC
+        ${lock}
+      `,
+      [quotationId],
+    );
+    return rows;
+  }
+
+  public async listFulfilledPartTotals(
+    executor: DatabaseExecutor,
+    ticketId: number,
+  ): Promise<FulfilledPartTotalRow[]> {
+    const [rows] = await executor.execute<FulfilledPartTotalRow[]>(
+      `
+        SELECT
+          pri.part_id,
+          part.sku AS part_sku,
+          part.name AS part_name,
+          part.unit AS part_unit,
+          CAST(SUM(pri.fulfilled_quantity) AS DECIMAL(12, 2)) AS quantity,
+          pri.unit_price
+        FROM part_request_items AS pri
+        INNER JOIN part_requests AS pr ON pr.id = pri.part_request_id
+        INNER JOIN parts AS part ON part.id = pri.part_id
+        WHERE pr.ticket_id = ?
+          AND pri.fulfilled_quantity > 0
+        GROUP BY
+          pri.part_id,
+          part.sku,
+          part.name,
+          part.unit,
+          pri.unit_price
+        ORDER BY pri.part_id ASC, pri.unit_price ASC
+      `,
+      [ticketId],
+    );
+    return rows;
   }
 
   public async createInvoice(

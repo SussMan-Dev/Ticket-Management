@@ -154,13 +154,13 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 
 ## quotations
 
-- Purpose: versioned quotation header and approval/customer response state.
+- Purpose: versioned diagnosis-estimate header and approval/customer response state.
 - Primary key: `id`.
 - Foreign keys: ticket, diagnosis, creator, approver.
 - Important columns: version, status, amount components, expiry, approval/send/response timestamps.
 - Important indexes: unique `(ticket_id, version)`, `(ticket_id, status)`.
 - Owned by: Quotations.
-- Implementation: Phase 6 locks the ticket/current quotation, allocates versions, records approval/send/response timestamps, and materializes expiry transactionally.
+- Implementation: Phase 6 locks the ticket/current estimate, allocates versions, records approval/send/response timestamps, and materializes expiry transactionally. Acceptance authorizes repair, not a fixed final invoice total.
 - Read full schema when: version, totals, approval, expiry, or response changes.
 
 ## quotation_items
@@ -171,7 +171,7 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Important columns: type, description, positive quantity, unit price, line total.
 - Important indexes: quotation.
 - Owned by: Quotations.
-- Implementation: initial lines snapshot approved diagnosis labor and catalog part prices; DRAFT replacement recalculates line/header totals server-side.
+- Implementation: the diagnosis estimate snapshots labor plus provisional diagnosis parts at catalog prices; DRAFT replacement recalculates line/header totals server-side. Provisional PART quantities do not reserve stock and are excluded from the final invoice.
 - Read full schema when: totals, item types, or price snapshot changes.
 
 ## part_requests
@@ -190,10 +190,10 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Purpose: requested and fulfilled quantities per part.
 - Primary key: `id`.
 - Foreign keys: part request and part.
-- Important columns: positive `requested_quantity`, bounded `fulfilled_quantity`.
+- Important columns: positive `requested_quantity`, bounded `fulfilled_quantity`, non-negative request-time `unit_price` snapshot.
 - Important indexes: unique `(part_request_id, part_id)`.
 - Owned by: Inventory.
-- Implementation: Phase 7 locks request items for fulfillment and increments fulfilled quantities without exceeding either the requested balance or stock.
+- Implementation: Phase 7 snapshots the active part selling price when the technician creates a repair-time request, then locks request items for warehouse fulfillment and increments fulfilled quantities without exceeding either the requested balance or stock. Fulfilled quantities and their request-time prices are the invoice PART source.
 - Read full schema when: partial fulfillment changes.
 
 ## inventory_transactions
@@ -215,7 +215,7 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Important columns: action, result, start/finish timestamps.
 - Important indexes: ticket.
 - Owned by: Repair Actions.
-- Implementation: Phase 8 permits active-assigned-author edits only until `finished_at` is set. Ticket row locking serializes log/part-attribution writes.
+- Implementation: Phase 8 permits the active assigned author to create or edit logs while the ticket is `REPAIRING` or `WAITING_FOR_PARTS`, only until `finished_at` is set. Ticket row locking serializes log/part-attribution writes.
 - Read full schema when: work logging or progress timing changes.
 
 ## repair_log_parts
@@ -248,7 +248,7 @@ The canonical definitions are in `src/database/schema.sql`. Read that file befor
 - Important columns: unique invoice code, amount components, paid amount, payment status.
 - Important indexes: unique ticket/code; payment status.
 - Owned by: Payments.
-- Implementation: Phase 9 snapshots accepted-quotation amounts into one invoice per locked completed ticket, maintains `paid_amount` and `payment_status` atomically, and uses no schema migration.
+- Implementation: Phase 9 combines accepted estimate LABOR/OTHER totals with cumulative inventory-fulfilled quantities priced by `part_request_items.unit_price`; provisional estimate PART lines are ignored. It creates one invoice per locked completed ticket and maintains `paid_amount` and `payment_status` atomically.
 - Read full schema when: totals, balance, status, or invoice creation changes.
 
 ## payments

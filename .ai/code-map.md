@@ -134,7 +134,7 @@ Dependencies: diagnoses, repair tickets, parts, customers, notifications.
 
 Read when: quotation totals, versions, expiry, approval, or response changes.
 
-Important rules: approved-diagnosis snapshots; server-calculated totals; catalog-owned PART prices; only sent/unexpired quotation may receive an owner response; supersede open versions; expiry and responses own atomic ticket history.
+Important rules: the approved diagnosis produces one customer estimate with server-calculated labor and provisional catalog-owned PART prices; diagnosis PART lines do not reserve stock or directly determine the invoice; only a sent/unexpired estimate may receive an owner response; acceptance starts repair; supersede open versions; expiry and responses own atomic ticket history.
 
 ## Parts and Inventory Modules
 
@@ -144,9 +144,11 @@ Main files: `src/modules/parts/part.route.ts`, `part.controller.ts`, `part.servi
 
 Tables: `parts`, `part_requests`, `part_request_items`, `inventory_transactions`.
 
-Dependencies: repair tickets, assignments, diagnoses, quotations, users, notifications, audit logs, and future repair actions.
+Dependencies: repair tickets, assignments, diagnoses, users, notifications, audit logs, and repair actions.
 
 Read when: stock, part pricing, part request, fulfillment, return, or low-stock logic changes.
+
+Important rules: technicians request parts only during repair; every request line snapshots its current selling price; warehouse approval and fulfillment are required; only fulfilled quantity is chargeable; stock fulfillment does not depend on a supplemental customer quotation.
 
 Important rules: inventory staff own catalog/movements/decisions; technicians require active assignment and see active catalog data without purchase prices; managers are read-only; lock balances in stable order; no negative stock; balance and immutable transaction row are atomic; partial fulfillment does not exceed outstanding request or stock; the final open request resumes repair atomically.
 
@@ -162,7 +164,7 @@ Dependencies: assignments, fulfilled inventory requests, repair tickets, notific
 
 Read when: repair progress, part usage, testing, or completion changes.
 
-Important rules: active assigned author writes only during repair; `finished_at` makes a log/parts immutable; attributed usage never decrements stock again or exceeds fulfillment; tests are append-only; newest case-insensitive named results gate completion; ticket/status history changes are atomic; customer reads are sanitized.
+Important rules: the active assigned author may write repair logs while `REPAIRING` or `WAITING_FOR_PARTS`; `finished_at` makes a log/parts immutable; attributed usage never decrements stock again or exceeds fulfillment; testing still requires the repair state and all logs finished; tests are append-only; newest case-insensitive named results gate completion; ticket/status history changes are atomic; customer reads are sanitized.
 
 ## Payments Module
 
@@ -172,11 +174,11 @@ Main files: `src/modules/payments/payment.route.ts`, `payment.controller.ts`, `p
 
 Tables: `invoices`, `payments`.
 
-Dependencies: accepted quotations, repair tickets/history, users, notifications, audit logs, and delivery readiness.
+Dependencies: accepted diagnosis estimates, fulfilled inventory requests, repair tickets/history, users, notifications, audit logs, and delivery readiness.
 
 Read when: invoice calculation, payment, refund, or delivery readiness changes.
 
-Important rules: one invoice per completed ticket; accepted-quotation totals are server-authoritative; locked cent-based balances prevent overpayment; completed payment fields are immutable; whole-payment refund requires active manager approval; financial/readiness/history/notification/audit changes are atomic.
+Important rules: one invoice per completed ticket; accepted LABOR/OTHER estimate lines form the service base; provisional estimate PART lines are excluded; chargeable PART totals use actual warehouse-fulfilled quantities and request-time unit-price snapshots; cashier preview and authorized detail expose the shared server-derived itemization, and create recalculates it under the ticket transaction; locked cent-based balances prevent overpayment; completed payment fields are immutable; whole-payment refund requires active manager approval; financial/readiness/history/notification/audit changes are atomic.
 
 ## Deliveries Module
 
